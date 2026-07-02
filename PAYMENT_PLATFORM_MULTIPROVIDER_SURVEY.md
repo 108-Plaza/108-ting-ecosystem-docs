@@ -10,20 +10,36 @@ Related SoT: memory `kbank-qr-second-provider` (backend slice-by-slice history),
 
 ---
 
-> **Implementation (2026-06-28):** the generic-provider build that this survey scoped is now
-> code-complete across 3 repos — see `docs/PAYMENT_PLATFORM_KBANK_GENERIC_PROVIDER.md` for the
-> design, the 3 PRs ([Payment-Platform #65](https://github.com/108-Plaza/Payment-Platform/pull/65),
-> [pos108 #476](https://github.com/108-Plaza/pos108/pull/476),
-> [pos108-admin #259](https://github.com/108-Plaza/pos108-admin/pull/259)), deploy sequence, and the
-> browser test. Deploy + live KBank mint are pending owner merge + the mTLS/IP unknowns below.
+> **⚠️ SUPERSEDED (2026-07-02) — this is a 2026-06-28 point-in-time survey; several central findings
+> below are now stale/implemented. Read it as history.** Key deltas since:
+> - The "relay + admin UI still SCB-only" headline (§1/§2) is **no longer true** — the relay went
+>   provider-agnostic (pos108 #476, `/payment-gateway/apps` + `?provider=`) and admin gained the generic
+>   multi-provider UI (pos108-admin #259). Both merged.
+> - §3's "recommended refactor" (route from the active credential; drop the dead
+>   `merchant_payment_provider` table) is **SHIPPED**, not a recommendation: `provider_for()` now reads
+>   `payment_credentials` (PR #71); the dead table was dropped in **migration 0025** (PR #72-era). The
+>   router keeps static enum dispatch but its input is creds-derived.
+> - §4 seed recipe's `INSERT merchant_payment_provider …` is **obsolete** (table gone) — the
+>   `PUT …/{provider}_credentials` write alone now sets routing.
+> - §5's "Mae Manee 3rd provider (design-only)" never shipped; the providers that actually landed are
+>   **2C2P** (live card adapter #76/#77/#82), **BBL** (dark #78), and **GSB/BAY/TTB/KTB** stubs (#79).
+>   `PaymentProvider` is now `{Scb, Kbank, TwoCTwoP, Gsb, Bay, Ttb, Ktb}`.
+> - PR numbers in §2 (#51/#53/#54) and the "#65" below predate the ground truth (Payment-Platform PR
+>   history now starts at #57) — treat them as VERIFY. The generic-provider build is captured accurately
+>   in `docs/PAYMENT_PLATFORM_KBANK_GENERIC_PROVIDER.md` (gateway #71/#72, relay #476, admin #259).
+>
+> _Original note (2026-06-28):_ the generic-provider build that this survey scoped is now code-complete
+> across 3 repos — see `docs/PAYMENT_PLATFORM_KBANK_GENERIC_PROVIDER.md`.
 
 ## 1. Headline
 
 - **SCB per-branch DB-binding design → fully supported + live** (admin catalog + per-branch
   selector + cred relay + ref3_prefix; deployed staging + PROD .68).
-- **Multi-provider design (KBank) → backend MERGED, but the two layers above the gateway
-  (relay + admin UI) are still SCB-only.** KBank is greenfield: code exists, **never tested
-  against a real KBank endpoint.**
+- **Multi-provider design (KBank) → backend MERGED, ~~but the two layers above the gateway
+  (relay + admin UI) are still SCB-only~~.** SUPERSEDED (2026-07-02): the relay is provider-agnostic
+  (pos108 #476) and admin has the generic multi-provider UI (pos108-admin #259); the seam now carries
+  KBank + 2C2P + BBL + GSB/BAY/TTB/KTB. Live KBank *mint* was still unproven at survey time (mTLS/IP) —
+  VERIFY current state.
 
 ## 2. Layer-by-layer status
 

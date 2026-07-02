@@ -3,8 +3,11 @@
 > The map of the K3s deployment documentation: what each doc/artifact is, the order to
 > read them, what's authored vs still to write. Start here.
 >
-> **Status:** 2026-06-24. Architecture proven; live in staging: Notification, **pos108 API
-> (`30810`, rev 4 `sha-8824860`)** + pos108-admin, BipByte (ns `tixtox`), image-processing-engine.
+> **Status:** 2026-06-24 (live-state below is VERIFY, not git-checkable). Architecture proven; live in
+> staging: Notification, **pos108 API (`30810`, rev 4 `sha-8824860`)** + pos108-admin, BipByte (ns
+> `tixtox`), image-processing-engine.
+> _Note (2026-07-02): the pinned `sha-8824860` (≈ main #426) is now many PRs behind head (#509) — a
+> deliberate pin, but re-confirm the running rev. BipByte deployable stack = 57 Rust services (not 60)._
 
 ---
 
@@ -35,7 +38,7 @@
 | `deploy/k3s/*.yaml` + `README.md` | manifests | namespaces, quota, netpol, datastores, NATS | ✅ applied (staging) |
 | `deploy/k3s/108plaza.net.zone` | config | corrected BIND zone (`*.staging` → Dell) | ✅ live |
 | `deploy/k3s/bootstrap.sh` | script | one-shot baseline apply (idempotent) | ✅ used |
-| `deploy/k3s/nginx/*.conf` | templates | host nginx vhost (backend + same-origin frontend) | ◐ notify done |
+| `deploy/k3s/nginx/*.conf` | templates | host nginx vhost (backend + same-origin frontend) | ◑ 6 vhosts present: notify + admin + auth + pay + orders + bipbyte |
 | `deploy/charts/ting-service/` | helm chart | shared service chart (+ examples) | ✅ v0.2.0, proven |
 | `deploy/k3s/04-*` (Traefik/RFC2136) | manifests | wildcard TLS in K3s | 🅿️ **parked** (nginx-edge used instead) |
 

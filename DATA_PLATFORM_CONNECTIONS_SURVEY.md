@@ -3,6 +3,11 @@
 > Read-only survey of how the Data Platform connects to the rest of the 108 Ting Ecosystem.
 > Verified against actual code/config 2026-06-14. Umbrella doc (this folder is NOT a git repo).
 > Source of truth for code = `Data-Platform/` @ `main 3b4f6f1`, working tree clean.
+>
+> **Update (2026-07-02):** since this 2026-06-14 survey, Data-Platform shipped the PII governance gate
+> (#37–#45), the reconciliation gate's **durability** pre-check + inline enforcement (#50–#55), and
+> **tenant-scoped catalog read tokens** (#47 — a tenant token reads only its own catalog; rejected on
+> admin/query routes). See the inline "Update (2026-07-02)" notes below for the items this affects.
 
 ## TL;DR
 
@@ -18,8 +23,10 @@
   consumer that actually reads it. **[CORRECTED 2026-06-14: an earlier draft wrongly said
   "no emitters / Checkpoint 3 unbuilt" — code-verified false; see
   `DATA_PLATFORM_INTEGRATION_TARGET_VS_ACTUAL.md`.]**
-- **The outbound serving API (`GET /catalog`, `POST /query`) is LIVE but has zero
-  ecosystem consumers wired** — the 108Zing "Z-track" DP client is planned, not built.
+- **The outbound serving API (`GET /catalog`, `POST /query`) is LIVE.** _Update (2026-07-02):_ the
+  108Zing "Z-track" consumer is now **PARTIAL** — Z-1 client (#277) + Z-2 shadow-compare (#278) shipped;
+  Z-3 flip / Z-4 cleanup pending a shadow soak (see `DATA_PLATFORM_INTEGRATION_TARGET_VS_ACTUAL.md` §1B).
+  Catalog read auth is now **tenant-scoped** (#47), no longer a single flat shared bearer.
 - **Most platforms are NOT connected** to the Data Platform (Logistics, Payment,
   Creator, IoT, Identity, pos108 slot-api). Notification publishes to Kafka but to a
   different topic Stratum doesn't tap.
@@ -111,14 +118,18 @@ serving Postgres (`[serving]`), internal event bus (memory | Kafka `[stream]`, t
 
 ## 4. Gaps / what "continue" means next
 
-1. **POS108 catalog producer (Checkpoint 3)** is the missing half of the webhook pipe —
-   `product.*`/`category.*`/`brand.*` emitters don't exist; until built, the HMAC webhook
-   carries no catalog traffic. Cross-repo, POS108-side — **do not touch pos108 without approval.**
+1. **POS108 catalog producer (Checkpoint 3)** — ~~emitters don't exist~~ **RESOLVED (producer built):**
+   `product.*`/`category.*` emitters ARE wired in-tx (`outbox::append`); brand is snapshot-only by
+   design. (This gap contradicted the corrected TL;DR above; both now agree.) What remains is the ops
+   subscription/secret exchange + a consumer that reads it. Cross-repo, POS108-side — **do not touch
+   pos108 without approval.**
 2. **No consumer reads the serving API** — outbound `GET /catalog` is LIVE but unused; the
    108Zing "Z-track" DP-client-behind-a-port + shadow-compare + flip is planned, not built.
 3. **Notification → Stratum** would just need a tap on the `notifications` topic (or repoint it
    to `realtime.events`) — currently a non-connection, not a broken one.
-4. **Wave 2 (financial CDC)** for 108Zing money DBs + reconciliation/PII gates — not started.
+4. **Wave 2 (financial CDC)** for 108Zing money DBs — _Update (2026-07-02):_ the **PII gates SHIPPED**
+   (Phase C, #37–#45) and the **reconciliation gate's durability strategy SHIPPED + inline-enforced**
+   (#50–#55). The **value** reconciliation strategy and financial CDC itself remain not started.
 
 See per-track detail: `Data-Platform/.ai_context` (DP-1..5, B3 tap, Commerce-ERP plan),
 `Data-Platform/HANDOFF.md`, and the POS108 / 108Zing docs cited in §2.

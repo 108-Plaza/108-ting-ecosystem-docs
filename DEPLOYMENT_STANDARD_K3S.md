@@ -192,7 +192,7 @@ Legend — **IaC**: ✅ ready · 🟡 partial (Dockerfile/compose, needs k8s/Hel
 |---------|------|--------------|-----------|-----|-----------------|
 | **identity-api** | Identity-Platform | prod, staging | Mac mini PG `identity` (prod) / in-cluster (staging) | 🟡 compose+prod | Auth edge, Ed25519 JWT issuer. Boot order #1. Prod secrets now required (audit #2 cleared). Model Helm on Notification chart. |
 | **pos108 (cloud)** | pos108 | prod, staging | Mac mini PG `pos108` + Redis | 🟡 Dockerfile fixed (#302) | **CLOUD aggregator only** (`APP_ENVIRONMENT=cloud`: inbox applier + conflict resolver). **Branch nodes do NOT go here** (§5c). Probes `/health/live`,`/health/ready`; grace 35s. |
-| **accountzing** | AccountZing-Platform | prod, staging | Mac mini PG `accountzing` | ❌ **no artifacts** | 🔴 **Build Dockerfile + manifests first** (audit: still zero on main). Auth + scheduler now wired (#7/#8). Ledger consumer of pos108 outbox. |
+| **accountzing** | AccountZing-Platform | prod, staging | Mac mini PG `accountzing` | 🟡 **Dockerfile + prod compose ✅ (#12)** | Dockerfile + `docker-compose.prod.yml` landed (#12, 2026-06-17); prod values drafted (`examples/values.accountzing.prod.yaml`). Remaining: seal secrets + deploy. Internal-only (ClusterIP). Auth + scheduler wired (#7/#8). Ledger consumer of pos108 outbox. |
 | **payment** | Payment-Platform/Gateway | prod, staging | Mac mini PG `payment` | 🟡 compose+prod | Consumer. Audit follow-ups merged (metrics+outbox+Docker #9). Single-PSP (SCB) today. |
 | **notification** | Notification-Platform | prod, staging | staging in-cluster PG/Redis (prod → Mac mini) | ✅ **LIVE in staging** | **The proven reference.** Deployed via shared chart (NodePort 30084) → nginx vhost + certbot → `https://notify.staging.108plaza.net` 200. Recipe for every other service. |
 | **media** | Media-Platform | prod, staging | Mac mini PG / object storage | 🟡 artifacts added (#3) | 9 services. Needs k8s manifests; CI now runs DB-adapter tests (#9). |
@@ -422,8 +422,8 @@ encoded as a `staging` zone. (Chosen over a brand-split apex; the existing
    `rndc freeze`/`thaw` for manual edits); fix the malformed legacy wildcards; add
    `*.staging IN A <DELL-IP>`. ACME issues via RFC2136 even before A records exist; test
    on LE **staging** CA first. Paste-ready in `deploy/k3s/README.md`.
-2. **AccountZing deploy artifacts** 🔴 — no Dockerfile/manifests exist; blocks
-   Wave 3. Build before placement.
+2. **AccountZing deploy artifacts** 🟡 — Dockerfile + prod compose landed (#12, 2026-06-17); prod
+   values drafted. Remaining = manifests/values wiring + secrets + deploy, not the Dockerfile.
 3. **Central secret manager** — Sealed Secrets is the start; decide if/when to
    move to External Secrets + Vault/KMS (audit cross-cutting #6).
 4. **GitOps tooling** — Argo CD vs Flux for Phase-2 (after Wave 1–2 prove the

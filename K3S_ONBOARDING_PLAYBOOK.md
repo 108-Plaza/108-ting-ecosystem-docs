@@ -34,8 +34,9 @@ The cluster is the *easy* part (it exists). Three gaps stand between "K3s runnin
 1. **Platform baseline not yet wired** — namespaces +
    isolation, secrets, registry pull, external-DB wiring, staging infra. One-time. §1.
 2. **Per-service deploy artifacts mostly missing** — only Notification (Helm) and
-   Creator (k8s) are deploy-ready today; everything else needs a chart/values, and
-   **AccountZing needs a Dockerfile from zero**. This is the bulk of the effort. §3–§4.
+   Creator (k8s) are deploy-ready today; everything else needs a chart/values.
+   (Update 2026-07-02: **AccountZing Dockerfile + prod compose now landed (#12)** — no longer
+   "from zero"; remaining is values + secrets + deploy. Media also has a Dockerfile now, #3.) §3–§4.
 3. **No onboarding gate** — no shared "definition of in-cluster," so each service
    would improvise. §3 fixes that with one checklist + one shared chart.
 
@@ -157,7 +158,7 @@ Author `ting-service` chart (§2) first, then a values file each. Order = boot s
 ### Step 3 — Build artifacts FIRST, then onboard
 | Service | Gap | Notes |
 |---|---|---|
-| **AccountZing** | 🔴 **no Dockerfile at all** | Build multi-stage Dockerfile + values **before** placement. **Internal-only — no subdomain** (ClusterIP; ledger off the internet). Auth/scheduler already wired (#7/#8). |
+| **AccountZing** | 🟡 **Dockerfile + prod compose ✅ (#12)** | Dockerfile + `docker-compose.prod.yml` landed (#12); prod values drafted. Remaining: values wiring + secrets + deploy. **Internal-only — no subdomain** (ClusterIP; ledger off the internet). Auth/scheduler wired (#7/#8). |
 
 ### Step 4 — Aligned later / their own track
 | Service | Notes |
@@ -208,8 +209,8 @@ nginx vhost + certbot).
 2. **Onboard Identity → pos108(cloud) → Payment** to `staging` via the proven recipe
    (NodePort + values + DB role + nginx vhost + certbot). Mind: Identity is the boot
    spine; pos108 = `APP_ENVIRONMENT=cloud` only.
-3. **Build AccountZing's Dockerfile** (parallel — the one hard blocker; internal-only,
-   no nginx vhost).
+3. **Deploy AccountZing** (Dockerfile + prod compose already landed #12; remaining = values +
+   secrets + deploy — no longer a hard blocker; internal-only, no nginx vhost).
 4. **kube-prometheus-stack** → flip `serviceMonitor.enabled=true` → metrics in Grafana.
 5. **Promote to `prod`** namespace once the staging set is stable (external `.68` DB).
 

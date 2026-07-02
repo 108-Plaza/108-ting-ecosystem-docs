@@ -37,6 +37,13 @@ no release gate. Each repo improvises. This audit's companion document
 
 ## Scoreboard
 
+> This scoreboard is the **2026-06-16 "before" snapshot** — kept as history. Many #1 blockers have since
+> closed (see "BLOCKERs now CLEARED" below). Notably by 2026-07-02: pos108/api Dockerfile ✅ (#302),
+> Identity secrets/iss-aud ✅ (#8), Notification outbox+reaper ✅ (#55/#56), Media deploy artifacts ✅ (#3),
+> AccountZing auth ✅ (#8) **and deploy artifacts ✅ (#12)**, Data-Platform recon **durability** gate
+> ✅ enforced (#50–#55, value strategy still open), Payment-Gateway now multi-PSP (KBank/2C2P/BBL/GSB/
+> BAY/TTB/KTB, #71–#83).
+
 | System | Maturity (code) | Deployable? | #1 blocker |
 |--------|-----------------|-------------|------------|
 | **pos108/api** (POS core) | Near-prod | ❌ | Dockerfile copies only `src/`, not `crates/` → image build fails |
@@ -167,7 +174,10 @@ Re-verified by `git fetch` + reading `origin/main` on every repo below (local ==
 origin/main for all; AccountZing local was 1 commit behind = its #9). The
 2026-06-16 snapshot said "branches pushed, PRs pending" — **those PRs are now
 merged.** Net: the ecosystem moved from "no service clears GATE-T" toward "most
-core BLOCKERs cleared; ~3 real items remain."
+core BLOCKERs cleared; ~3 real items remain." **Update (2026-07-02):** the AccountZing deploy-artifact
+and Data-Platform CI-DB items below have since closed (#12, #53), and the reconciliation gate is now
+durability-enforced (#50–#55) — the remaining GATE-T work is the Data-Platform **value** reconciliation
+strategy plus ops items (BipByte launch set, cross-service e2e, secrets manager).
 
 ### BLOCKERs now CLEARED on `origin/main`
 
@@ -182,14 +192,14 @@ core BLOCKERs cleared; ~3 real items remain."
 | Payment audit follow-ups | ✅ C1–C3 + H1–H7 — **#12**; SSRF/idempotency/CAS/scope/claim — **#13/#15**; metrics+outbox+Docker — **#9** |
 | Cross-cutting #3 supply-chain scan | ✅ cargo-deny + Dependabot merged in pos108 (**#304**), Identity (**#9**), Media (**#4/#8**), AccountZing (**#9**), Payment |
 | Cross-cutting #4 observability (POS) | ✅ pos108/api Prometheus `/metrics` w/ outbox-backlog + dead-letter gauges — **#310** |
-| Cross-cutting #5 CI DB tests | ✅ Media runs DB-adapter integration tests vs Postgres in CI — **#9** (Data-Platform still pending) |
+| Cross-cutting #5 CI DB tests | ✅ Media runs DB-adapter integration tests vs Postgres in CI — **#9**; Data-Platform now runs recon tests against a CI Postgres — **#53** (`stratum-catalog/tests/pg_reconciliations.rs`) |
 
 ### Still OPEN (the real remaining work)
 
 | Item | Severity | Status / why |
 |---|---|---|
-| **Data-Platform reconciliation gate** (#5) | 🔴 BLOCKER (in progress) | **Slice 0 (durability pre-check) merged** — Data-Platform #50 (design) + #51 (`recon::DurabilityReport` fail-closed row-count gate + `RECONCILIATION_BREAKS` metric). The **value** reconciliation (A-intra/A-ext) is still unbuilt: needs Q-REC-1..5, a pinned AccountZing read contract (no client today), and the money-type call (`Float64` today). Money-Gold path still cannot ship until that lands. See `DECISION-data-reconciliation-gate.md`. |
-| **AccountZing deploy artifacts** | 🔴 BLOCKER | **Still none (verified: 0 Dockerfile/compose on origin/main, only `dependabot.yml`).** Auth/scheduler done but the service has no deployable image. |
+| **Data-Platform reconciliation gate** (#5) | 🟡 PARTLY CLOSED (2026-07-02) | **Slices 0–4 merged (#50–#55):** durability strategy is now config-driven (#52), persisted with a `RECONCILIATION_BREAKS` metric + CI Postgres (#53), and **inline-enforced — a row-loss break blocks the dependent Gold step** (#55). Money-type settled to **BIGINT integer minor units** (migration 0003), not `Float64`. **STILL OPEN:** the **value** reconciliation strategy (control-total/two-derivation, Q-REC-1..5) + a pinned AccountZing read contract — Money-Gold value-integrity gate not yet built. See `DECISION-data-reconciliation-gate.md`. |
+| **AccountZing deploy artifacts** | ✅ CLOSED (2026-07-02) | Production container image + compose SHIPPED — **#12** (`Dockerfile`, `docker-compose.yml`, `docker-compose.prod.yml` on origin/main; prod values file drafted). Auth/scheduler already done (#8/#7). Remaining is ops-only (seal secrets + deploy). |
 | **BipByte launch set** (#7) | 🟠 | Ops/creds — edge E5, SendGrid/Twilio/FCM/SCB creds, managed PG + restore drill, S3/CDN. Item 5 (S3 readiness probe) is codeable. `DECISION-bipbyte-launch-readiness.md`. |
 | **Notification cutover** | 🟡 | Code complete; remaining = the B1.6 operational runbook (flip email→push, soak). Ops-owned. |
 | **Cross-service e2e + secrets manager** | 🟡 | No automated cross-seam e2e yet; still raw-env secrets (Vault/KMS) — Identity now *requires* prod secrets but no central manager. |

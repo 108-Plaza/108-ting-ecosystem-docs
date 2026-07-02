@@ -78,12 +78,14 @@ public (staging *and* prod) resolves to the Dell; nginx routes by hostname.
 ¹ **Notification is LIVE at `30084`** (assigned before this scheme). It logically belongs
 at `30111`; renumber when convenient (needs a redeploy + its nginx vhost `proxy_pass` change).
 
-² **BipByte is now a 60-microservice stack** (`tix-tox-clone`), deployed to ns **`tixtox`** —
-not the old single "server" binary. Only **api-gateway** is exposed (NodePort `30910`,
-`/health` 200 from `103.27.202.40:30910`); the other 59 services (auth, feed, media,
-payment, live, …) are **ClusterIP**, reached internally via the gateway's `*_SERVICE_URL`
-env. Manifests: root project `deploy/tixtox/` (kustomize, `api-gateway-ext` NodePort in
-`91-api-gateway-nodeport.yaml`); images `tixtox-*:latest` built on-node (`IfNotPresent`).
+² **BipByte is a 57-service stack** (`tix-tox-clone`), deployed to ns **`tixtox`** —
+not the old single "server" binary. (The 3 C/C++ engines are excluded — no images built; sibling
+`tixtox-engines` repo — so the deployable stack is 57 Rust services, per `deploy/tixtox/README.md` +
+`service-list.txt`.) Only **api-gateway** is exposed (NodePort `30910`, `/health` 200 from
+`103.27.202.40:30910`); the other **56** Rust services (auth, feed, media, payment, live, …) are
+**ClusterIP**, reached internally via the gateway's `*_SERVICE_URL` env. Manifests: root project
+`deploy/tixtox/` (kustomize, `api-gateway-ext` NodePort in `91-api-gateway-nodeport.yaml`); images
+`tixtox-*:latest` built on-node (`IfNotPresent`).
 No ingress controller here (Traefik disabled) so `90-ingress.yaml` is inert — NodePort only.
 
 ³ **image-processing-engine is a Redis-Streams queue worker, not an HTTP service** — no
@@ -164,10 +166,12 @@ server {
 - ✅ **pos108-admin** (`30310`) — LIVE PUBLIC at `https://admin.staging.108plaza.net`
   (same-origin `/api`→pos108 proven, 401 JSON). Image #228 + lockfile fix #229.
   Staging admin login: `admin` / (set at deploy, see secret `pos108-secrets`).
-- ✅ **BipByte API** (`30910`) — LIVE in ns `tixtox`: full `tix-tox-clone` stack, **60
-  pods Running**, api-gateway `/health` 200 (internal + `103.27.202.40:30910`). Deployed
-  via `deploy/k8s/` kustomize (on-node images); only api-gateway exposed (NodePort), rest
-  ClusterIP. No host/TLS yet (`bipbyte.staging.108plaza.net` nginx vhost not wired).
+- ✅ **BipByte API** (`30910`) — LIVE in ns `tixtox`: full `tix-tox-clone` stack (**57 Rust
+  services**; the 3 C/C++ engines excluded), api-gateway `/health` 200 (internal +
+  `103.27.202.40:30910`). Deployed via **`deploy/tixtox/`** kustomize (on-node images); only
+  api-gateway exposed (NodePort), rest ClusterIP. nginx vhost `bipbyte.staging.108plaza.net` →
+  `127.0.0.1:30910` **is wired** (`deploy/k3s/nginx/bipbyte.staging.108plaza.net.conf`); TLS via
+  certbot — VERIFY cert issuance (live-state).
 - **Next (staging):** pos108-pos (`30311`) + orders (`30312`) + slot (`30313`)
   frontends (same recipe, same-origin /api). Identity (`30110`) + Payment (`30210`).
   AccountZing = build Dockerfile first, stays ClusterIP.

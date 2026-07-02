@@ -1,11 +1,19 @@
 # Super-SA Platform Console — Design Plan
 
-> **Status:** DESIGN / doc-only (2026-06-30). Owner-approved direction; no code yet.
+> **Status:** STATUS (2026-07-02) — **Phase 2 backend SHIPPED (no longer doc-only).** All six pos108
+> backend PRs are merged on `main`: #492 (`31756e7`) platform-tier guards on AuthCtx, #494 (`dd5a4fb`)
+> Super-SA impersonation mint, #496 (`56c6bf5`) delivery-scope shadowing fix, #498 (`3b937d5`) re-gate
+> control endpoints to Super-SA, #499 (`6a6fc9c`) tenant-overview endpoint, #500 (`a51c3d4`) narrow SA
+> write-management, #501 (`5252503`) short dedicated impersonation-token TTL. The §4.3 step-0 offline
+> token-validation spike is **DONE** and no longer blocks. **Remaining:** step 5b MFA/step-up,
+> multi-instance registry, and the platform-console app itself — a **local-only scaffold** (repo
+> `platform-console`, 3 commits, **no git remote / not on the approved-work list**; see the ⚠️ note in
+> `ACTIVE_WORK.md`). §6's checklist is already up to date.
 > Decisions locked: **(1)** Super-SA lives in a **separate platform console** (new
 > `platform-console` repo, NOT inside `pos108-admin`); **(2)** plan-before-build;
 > **(3)** §4.2 resolved — **federate via Identity-Platform** + **per-tenant
-> impersonation tokens** (see §4.2 + §4.2a). **Next gate: §4.3 step 0** — the pos108
-> offline token-validation spike blocks all Phase 2 code.
+> impersonation tokens** (see §4.2 + §4.2a).
+> _Original (2026-06-30): DESIGN / doc-only, no code yet._
 > SoT for the platform-console design until the dedicated repo exists.
 
 ## 1. Why
@@ -68,7 +76,7 @@ Shipped: tenant page (#272) + per-branch removal (#271); reworked to view+pay
 > `GET /tenant/invoices`, and `pay-link`. Until that re-gate lands, the SA's *UI*
 > can't issue/bill, but the API restriction is not yet enforced — track in §4.3.
 
-## 4. Phase 2 — Super-SA platform console (separate app) — design
+## 4. Phase 2 — Super-SA platform console — backend SHIPPED (2026-07-02); console app scaffold-only
 
 A **separate** console app (own repo/deploy), strictly gated to `SUPER_ADMIN`,
 managing tenants cross-tenant. The hard parts are **provisioning** and **cross-tenant

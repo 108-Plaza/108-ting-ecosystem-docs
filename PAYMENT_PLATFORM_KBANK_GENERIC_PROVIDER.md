@@ -8,9 +8,15 @@ Gateway DB migrated 18→25 (0022 backfilled 2 live SCB creds; old tables droppe
 QR app via UI (keyed to `payment_credentials`, catalog shows provider=KBank). A read-back 500 bug found in
 testing (relay decoded gateway-nullable `terminalId`/`envId` as non-optional `String`) was fixed
 ([pos108 #477](https://github.com/108-Plaza/pos108/pull/477)) and redeployed (`sha-b69368f`); edit prefill re-verified working.
-**Only remaining:** live KBank QR **mint** (blocked on the mTLS client cert + source-IP allowlist).
+**Only remaining (as of 2026-06-28):** live KBank QR **mint** (blocked on the mTLS client cert +
+source-IP allowlist) — VERIFY current cert/allowlist state.
 **Companion:** `docs/PAYMENT_PLATFORM_MULTIPROVIDER_SURVEY.md` (the survey that scoped this).
 **Memory SoT:** `kbank-qr-second-provider`.
+
+> **Update (2026-07-02):** the same generic seam has since carried further providers — 2C2P (card PSP,
+> #76/#77/#82), a dark BBL QR adapter (#78), and scaffolded GSB/BAY/TTB/KTB stub providers (#79).
+> `PaymentProvider` is now a **7-variant enum** (`Scb, Kbank, TwoCTwoP, Gsb, Bay, Ttb, Ktb`), not
+> SCB+KBank. See `PAYMENT_PLATFORM_QR_BANKS_EXPANSION.md`.
 
 ## Goal
 An operator creates a **KBank QR app** in the pos108-admin UI, assigns it to a branch, and that
@@ -29,7 +35,7 @@ path. Provider is **generic** end-to-end (`{provider}`), not an SCB mirror.
 
 | # | Repo | PR | What |
 |---|---|---|---|
-| 1 | Payment-Platform (Gateway) | [#65](https://github.com/108-Plaza/Payment-Platform/pull/65) | `ProviderRouter` derives provider from `payment_credentials` (drops the dead `merchant_payment_provider` table via migration **0023**); enriches `GET /v1/admin/merchants` with `provider` per merchant. |
+| 1 | Payment-Platform (Gateway) | [#71](https://github.com/108-Plaza/Payment-Platform/pull/71) (+ enum-dispatch [#72](https://github.com/108-Plaza/Payment-Platform/pull/72)) | `ProviderRouter` derives provider from `payment_credentials` (drops the dead `merchant_payment_provider` table via migration **0025**); enriches `GET /v1/admin/merchants` with `provider` per merchant. |
 | 2 | pos108 (api / cloud relay) | [#476](https://github.com/108-Plaza/pos108/pull/476) | Generic credential relay: `CredentialGatewayPort`, routes `/payment-gateway/apps` + `/{id}/credentials` (clean break of `/scb-apps`), routes by `provider` to gateway `/scb_credentials` or `/kbank_credentials`. |
 | 3 | pos108-admin | [#259](https://github.com/108-Plaza/pos108-admin/pull/259) | Generic multi-provider catalog UI: provider selector + `PROVIDER_FIELDS` map + provider column + bank-agnostic i18n + e2e. |
 
@@ -49,12 +55,12 @@ partnerSecret?, merchantCode?, terminalId?, qrType?(3|4|5), envId?`. Secrets are
 
 ## Local verification (all green)
 - **Gateway #65**: `cargo check/fmt/clippy` clean; 3 routing unit tests + 15 DB integration tests
-  (all migrations incl. 0023; `merchant_payment_provider` confirmed dropped).
+  (all migrations incl. 0025; `merchant_payment_provider` confirmed dropped).
 - **Relay #476**: `cargo check` (pos-payment + bin) + fmt + clippy clean; `pos-payment` 5 + `scb_gateway_client` 20 tests (incl. KBank DARK-degrade).
 - **Admin #259**: `tsc` + `lint` clean; `vitest` 362; `playwright` smoke (payment-gateway 3 + branches 4).
 
 ## Deploy to staging (owner-gated)
-1. **Merge** #65 → Payment-Platform `main` (owner approval). Apply migration 0023 + deploy the
+1. **Merge** #71 → Payment-Platform `main` (owner approval). Apply migration 0025 + deploy the
    gateway image to staging.
 2. **Merge** #476 (pos108) and #259 (pos108-admin) → `main` (owner approval). They are a **clean
    break** (relay drops `/scb-apps`; admin targets `/apps`) so **deploy them together**.
@@ -80,8 +86,9 @@ partnerSecret?, merchantCode?, terminalId?, qrType?(3|4|5), envId?`. Secrets are
   **locked**, but sandbox test access works (Try-API 15/15 passed).
 - **Source-IP allowlist**: KBank may IP-allowlist the gateway egress ("403 Access Denied ⇒
   allowlist"). Staging egress IP may need registering.
-- **Migration 0023** drops `merchant_payment_provider` (empty/never-written → inert) — low risk but
-  a schema change; renumber if Gateway `main` advanced past 0022 before merge (CI Pg is persistent).
+- **Migration 0025** drops `merchant_payment_provider` (empty/never-written → inert) — low risk but
+  a schema change. (It did land as 0025, not the originally-drafted 0023: Gateway `main` advanced past
+  0022 before merge, so the drop was renumbered; there is no 0023 migration.)
 - A merchant could technically hold two active provider credentials (PK `(merchant_id, provider)`);
   routing uses a deterministic `ORDER BY provider` tiebreak. Hardening (deactivate-others-on-upsert)
   is a follow-up.

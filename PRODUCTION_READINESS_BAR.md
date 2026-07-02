@@ -127,7 +127,9 @@ The 2026-06-16 audit found **no service clearing GATE-T cleanly**. As of the
 merged — AccountZing now has auth (#8), Media now ships deploy artifacts (#3),
 Identity requires prod secrets (#8), pos108/api builds + exposes `/metrics`
 (#302/#310), Notification has a transactional outbox + reaper (#56/#55).
-**Remaining GATE-T blockers:** Data-Platform reconciliation gate (zero code) and
-AccountZing deploy artifacts (still none). See the
+**Remaining GATE-T blockers (as of 2026-07-02):** the Data-Platform **value** reconciliation strategy
+— the durability pre-check is shipped + inline-enforced (#50–#55; value strategy pending). AccountZing
+deploy artifacts are now shipped (#12) and the recon durability gate is enforced — both prior blockers
+closed. See the
 [Follow-up status (2026-06-17)](PRODUCTION_READINESS_AUDIT.md#follow-up-status-updated-2026-06-17--verified-against-originmain)
 for the full merged/open breakdown.

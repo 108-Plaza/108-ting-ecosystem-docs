@@ -69,14 +69,18 @@
    ingest). **Backfill path complete**; only the ops subscription remains; (c) brand authoring API
    only if brand events are ever needed (else keep snapshot-only).
 3. **Stratum production hardening.** Serving store (DP-3, Postgres) already closes the "DataFusion-
-   per-request" gap #4. Remaining before prod: **per-consumer auth/quota/entitlements** (gap #5 —
-   single shared bearer today), **TLS termination** (S3 remainder), **Kafka SASL/TLS + runtime
-   hardening**, and a **real deploy target** (canary runs local-FS storage + in-memory bus, not prod infra).
+   per-request" gap #4. Remaining before prod: **per-consumer quota/entitlements** (gap #5 — _Update
+   (2026-07-02):_ tenant-scoped read tokens now exist (#47 — a tenant token reads only its own catalog,
+   rejected on admin/query routes); still missing = quota/entitlements + partner-grade multi-consumer
+   auth), **TLS termination** (S3 remainder), **Kafka SASL/TLS + runtime hardening**, and a **real
+   deploy target** (canary runs local-FS storage + in-memory bus, not prod infra).
 
 ### P1 — next wave
 4. **Financial CDC (108Zing Wave 2 / POS108 Phase C) — `PLANNED (blocked)`.** Needs read-only CDC role
-   (ops) **and** the two cross-cutting gates that don't exist yet: **PII governance gate** + **reconciliation
-   gate** (§8). Gold financial data must not go live until both pass. (Accounting/GL stays forbidden scope.)
+   (ops). _Update (2026-07-02):_ the **PII governance gate SHIPPED** (#37–#45) and the **reconciliation
+   gate's durability pre-check SHIPPED + inline-enforced** on Gold promotions (#50–#55). What remains
+   before Gold-financial go-live = the **value** reconciliation strategy (control-total / two-derivation,
+   Q-REC-1..5) + a pinned read contract, plus the CDC role. (Accounting/GL stays forbidden scope.)
 5. **Notification topic decision — `NOT CONNECTED`.** Platform-Services/Notification publishes to
    `notifications`, which Stratum doesn't tap. Decide: add a Stratum tap on `notifications`, or repoint
    the service to the `realtime.events` backbone. One-line config/ownership call, not a broken pipe.
@@ -172,9 +176,11 @@ is stalled on its **last 10%**, all on the read side.
 3. **Close production hardening (P0-3) before any external consumer:** per-consumer auth/entitlements
    (gap #5) + TLS + a real deploy target. The single shared bearer is fine for internal 108Zing, **not**
    for partner/supplier/affiliate (Phase 4).
-4. **Defer P1/P2.** Financial CDC stays blocked until the PII + reconciliation gates exist — build those
-   gates first, treat Gold-financial as gated. Make the Notification topic call (cheap). Everything else
-   (Logistics/Payment/Creator/IoT/Identity) waits for its phase.
+4. **Defer P1/P2.** _Update (2026-07-02):_ Financial CDC stays blocked until the **value** reconciliation
+   strategy lands — the PII gate and the recon **durability** pre-check already exist + are enforced
+   (#37–#45, #50–#55); build the value-recon strategy + read contract next, treat Gold-financial as
+   gated. Make the Notification topic call (cheap). Everything else (Logistics/Payment/Creator/IoT/
+   Identity) waits for its phase.
 
 **Cross-repo guardrail:** POS-4/5 touch the **POS108 repo** and Z-1..Z-4 touch the **108Zing repo** —
 both outside the current active area (`Commerce-Platform/pos108/api` is in-scope for POS-4/5; 108Zing is

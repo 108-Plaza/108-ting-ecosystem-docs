@@ -6,6 +6,16 @@
 > on the **existing generic-provider seam** (same one that carries SCB + KBank + 2C2P today).
 > Krungsri was added by the owner during planning (2026-06-28) → **5 new banks**.
 
+> **STATUS (2026-07-02) — partly shipped, and the router shape differs from the plan below:**
+> - **GSB/BAY/TTB/KTB variants already exist** in the enum, dispatched to a single shared
+>   `StubBankGateway` via `stubs.for_provider(p)` — **not** as new generic type-params (PR #79). So
+>   `ProviderRouter` stayed `<S, K, T>` (scb/kbank/2c2p) + one stub arm covering all four dark banks;
+>   the "grow to 7/8 type-params" concern (Decision 2 / §5) did **not** materialize for the stubs.
+> - **BBL is still absent from the enum** — its adapter `bbl_gateway.rs` exists but is dark/unwired
+>   (PR #78), so for BBL the "add enum variant" step still stands.
+> - `PaymentProvider` now lives at `crates/application/src/ports.rs:226` (the §2 "`:218`" reference is
+>   stale). Per-bank work remaining = replace each stub with a real adapter + portal-verify the contract.
+
 ## 0. Decisions locked (owner, 2026-06-28)
 
 1. **Banks (5):** BBL, KTB, GSB, ttb, **Krungsri/BAY** — owner reports portal access + sandbox creds

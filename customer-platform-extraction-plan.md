@@ -1,7 +1,17 @@
 # Customer-Platform Extraction Plan
 
-> **Status:** DRAFT / doc-only — owner approved offline model **A** (central + cloud→branch mirror),
-> requested detailed plan before any scaffold (2026-06-28). No code written yet.
+> **Status:** DRAFT plan. **⚠️ STATUS (2026-07-02) — REALITY vs PLAN: the "no code written yet" line
+> below is FALSE, and the code is UN-PUSHED / UN-SANCTIONED.** A full S1–S5 implementation was built
+> locally at `Platform-Services/customer-plat` (10 commits: S1 genesis `fa15114` → S2 own DB `cde3a96`
+> → S3 HTTP + Identity EdDSA auth `80a660a` → S4 cloud→branch replication outbox `fc292d8` → S5
+> pull/denormalize `47231d3`/`945fd0c`/`1b4175c`/`50775b6` + pull-cursor data-loss fix `4b96016`). It
+> has **no git remote** (never pushed). pos108-side work sits on three branches pushed to origin but
+> **unmerged to main**: `feat/customer-sync-applier`, `feat/customer-platform-pull` (DARK),
+> `feat/customer-denormalize-refs`. This build ran **past** the plan's own "start S1 scaffold" gate
+> (§8) and is on **no approved-work list** — treat it as un-approved local work needing owner
+> reconciliation (sanction & push, or discard), NOT as delivered/approved. S6 (deploy) not started.
+> _Original (2026-06-28):_ DRAFT / doc-only — owner approved offline model **A** (central + cloud→branch
+> mirror), requested a detailed plan before any scaffold. "No code written yet" (as of that date).
 > **SoT** for this plan until the service repo exists; then move to `customer-plat/docs/`.
 > Sibling pattern: [loyalty-service-extraction], [payroll-service-extraction], AccountZing.
 >
@@ -91,6 +101,12 @@ online enrichment (online-only, not on sell path). **Recommend (a)** — keeps b
 ---
 
 ## 4. Slice plan (proven Loyalty/Payroll cadence)
+
+> **STATUS (2026-07-02):** S1–S5 below have been **IMPLEMENTED locally (un-pushed, un-sanctioned)** —
+> S1 `fa15114` · S2 `cde3a96` · S3 `80a660a` · S4 `fc292d8` · S5 `47231d3`/`945fd0c`/`1b4175c`/`50775b6`
+> + data-loss fix `4b96016`. S6 (Deploy) not started. This build is not pushed to any remote and not on
+> an approved-work list — see the header note; the "before push / owner-gated merge" cadence below was
+> **not** followed.
 
 Each slice = local-green gate (fmt + clippy -D + check + tests) before push; owner-gated merge.
 
@@ -192,5 +208,12 @@ Each slice = local-green gate (fmt + clippy -D + check + tests) before push; own
 
 **All §7 decisions resolved (2026-06-28):** model A · repo `customer-plat` · phone-first key ·
 no-phone temp `12345` · online-only create · Forbidden-Scope cleared. Plan is fully specified.
-**Awaiting only the explicit "start S1 scaffold" go-ahead** (creating the new repo is a
-platform-scope step). Until then this stays doc-only.
+~~**Awaiting only the explicit "start S1 scaffold" go-ahead**~~
+
+> **STATUS (2026-07-02):** the "start S1" gate was **NOT** waited on — S1–S5 were built locally anyway
+> (see header). The build remains **un-pushed (no remote) and un-approved**. The real next action is now
+> **RECONCILIATION**: an owner decision whether to sanction + push this work (create `108-Plaza/
+> customer-plat`, add it to the approved-work list) or discard it — NOT "start S1." Note the service's
+> own `.ai_context/HANDOFF.md` records that push is blocked by the exfil classifier and must be done
+> manually by the owner. It also carries a confirmed **cross-tenant PII leak** in `/api/sync/pull` (no
+> tenant filter) that should be fixed before any push.

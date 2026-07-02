@@ -5,14 +5,17 @@
 > **M**=docs/MILESTONES.md · **D**=docs/DO_NOT_TOUCH.md · **ai**=.ai_context/) across every repo.
 > Companion to [`CONTROL_DOC_COVERAGE.md`](CONTROL_DOC_COVERAGE.md) (the living checklist) and
 > [`ARCHITECTURE.md`](ARCHITECTURE.md) (the platform map).
-> Surveyed live: **2026-06-22**.
+> Surveyed live: **2026-07-02**.
 
 ## Coverage at a glance
 
-- Overall control-doc coverage: **49 / 144 (≈34%)** across **24 repos** / **9 platforms**.
+- Overall control-doc coverage: **53 / 162 (≈33%)** across **27 repos** / **9 platforms**.
 - Fully compliant (6/6): **only `Commerce-Platform/pos108/api`** (the active work area).
-- Weakest standards ecosystem-wide: **MILESTONES 1/24** · **DO_NOT_TOUCH 3/24** · **ARCHITECTURE 6/24**.
-- Strongest: **HANDOFF 17/24** · **.ai_context 15/24**.
+- Weakest standards ecosystem-wide: **MILESTONES 1/27** · **DO_NOT_TOUCH 3/27** · **ARCHITECTURE 6/27**.
+- Strongest: **HANDOFF 20/27** · **.ai_context 16/27**.
+- New since last survey: `Commerce-Platform/storefront` (1/6), and two **local-only / un-pushed**
+  Platform-Services repos — `customer-plat` (1/6) and `platform-console` (1/6) — see the ⚠️ note in
+  [`ACTIVE_WORK.md`](ACTIVE_WORK.md); do not treat them as sanctioned scope.
 
 ## Graph
 
@@ -38,6 +41,7 @@ graph TD
   COM --> COM6["pos108/slot-api · 1/6"]:::partial
   COM --> COM7["product-vision · 3/6"]:::partial
   COM --> COM8["shop108 · 0/6"]:::empty
+  COM --> COM9["storefront · 1/6"]:::partial
 
   BIP --> BIP1["server · 4/6"]:::partial
   BIP --> BIP2["engines · 3/6"]:::partial
@@ -49,6 +53,8 @@ graph TD
   PS --> PS1["Notification · 3/6"]:::partial
   PS --> PS2["Media · 1/6"]:::partial
   PS --> PS3["Security/identity · 1/6"]:::partial
+  PS --> PS4["customer-plat · 1/6 (local-only, un-pushed)"]:::empty
+  PS --> PS5["platform-console · 1/6 (local-only, un-pushed)"]:::empty
 
   IOT --> IOT1["Smart-Farm · 3/6"]:::partial
   IOT --> IOT2["Smart-Home · 2/6"]:::partial
@@ -75,10 +81,11 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
 | Commerce-Platform | pos108/apps/admin | ✓ | ✓ | · | · | · | ✓ | 3 |
 | Commerce-Platform | pos108/apps/pos | ✓ | ✓ | · | · | · | · | 2 |
 | Commerce-Platform | pos108/apps/orders | · | · | · | · | · | · | 0 |
-| Commerce-Platform | pos108/apps/slot | · | · | · | · | · | · | 0 |
+| Commerce-Platform | pos108/apps/slot | ✓ | · | · | · | · | · | 1 |
 | Commerce-Platform | pos108/slot-api | ✓ | · | · | · | · | · | 1 |
 | Commerce-Platform | product-vision | ✓ | ✓ | · | · | · | ✓ | 3 |
 | Commerce-Platform | shop108 | · | · | · | · | · | · | 0 |
+| Commerce-Platform | storefront | ✓ | · | · | · | · | · | 1 |
 | BipByte-Platform | server | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
 | BipByte-Platform | engines | ✓ | ✓ | · | · | · | ✓ | 3 |
 | BipByte-Platform | realtime-edge | ✓ | · | · | · | · | · | 1 |
@@ -88,6 +95,8 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
 | Platform-Services | Notification | ✓ | · | ✓ | · | · | ✓ | 3 |
 | Platform-Services | Media | ✓ | · | · | · | · | · | 1 |
 | Platform-Services | Security/identity | ✓ | · | · | · | · | · | 1 |
+| Platform-Services | customer-plat *(local-only, un-pushed)* | · | · | · | · | · | ✓ | 1 |
+| Platform-Services | platform-console *(local-only, un-pushed)* | ✓ | · | · | · | · | · | 1 |
 | IoT-Platform | Smart-Farm | ✓ | · | ✓ | · | · | ✓ | 3 |
 | IoT-Platform | Smart-Home | ✓ | · | · | · | · | ✓ | 2 |
 | Payment-Platform | Gateway | ✓ | · | · | · | ✓ | ✓ | 3 |
@@ -95,7 +104,7 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
 | Data-Platform | (repo root) | ✓ | · | · | · | · | · | 1 |
 | Creator-Platform | creator | ✓ | · | ✓ | · | · | ✓ | 3 |
 | Logistics-Platform | delivery | ✓ | · | ✓ | · | · | ✓ | 3 |
-| **per-doc total** | **(/24)** | **17** | **7** | **6** | **1** | **3** | **15** | **49** |
+| **per-doc total** | **(/27)** | **20** | **7** | **6** | **1** | **3** | **16** | **53** |
 
 ## How to refresh
 
@@ -111,9 +120,10 @@ repos=(Commerce-Platform/pos108/api AccountZing-Platform Payment-Platform/Gatewa
   Commerce-Platform/pos108/apps/admin Commerce-Platform/pos108/apps/pos \
   Commerce-Platform/pos108/apps/orders Commerce-Platform/pos108/apps/slot \
   Commerce-Platform/pos108/slot-api Commerce-Platform/product-vision Commerce-Platform/shop108 \
+  Commerce-Platform/storefront \
   Creator-Platform/creator Logistics-Platform/delivery IoT-Platform/Smart-Farm \
   IoT-Platform/Smart-Home Platform-Services/Notification Platform-Services/Media \
-  Platform-Services/Security/identity)
+  Platform-Services/Security/identity Platform-Services/customer-plat Platform-Services/platform-console)
 for r in $repos; do
   H=.;C=.;A=.;M=.;D=.;ai=.
   [ -f "$r/HANDOFF.md" ] && H=x;            [ -f "$r/CLAUDE.md" ] && C=x

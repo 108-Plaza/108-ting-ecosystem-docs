@@ -14,8 +14,11 @@ Commerce-Platform/pos108/api/.ai_context/ (tracked control system; start with RE
 108-Zing). Approved active work area in parallel with POS108. Follows its own docs
 (`AccountZing-Platform/docs/SPEC-001-*.md`, `docs/build-plan/`, `.ai_context/HANDOFF.md`) and runs
 its own git/CI/lifecycle — open a session with cwd = `AccountZing-Platform/` to work it. This is the
-approved exception to the `accounting` entry in DO_NOT_TOUCH.md. Progress: M0 (#1) + M1/Slice 2A (#2)
-merged to its `main`.
+approved exception to the `accounting` entry in DO_NOT_TOUCH.md. Progress (updated 2026-07-02):
+M0 (#1), M1/Slice 2A (#2), M2/SLA-engine Slice 3 (#3), M4/refund+appeal Slice 4 (#4), and
+M5/settlement-engine Slice 5 (#5) merged to its `main`; latest merged work is #17 (settlement
+eligibility bucketed by Bangkok date) plus deploy/CI hardening — #12 (prod container image + compose),
+#9 (cargo-deny + Dependabot), #23/#24 (self-hosted runner, manual-only image build during dev).
 
 **product-vision** — owner-approved 2026-06-20 standalone repo `Commerce-Platform/product-vision/`:
 visual product lookup for POS108 (photo → SKU via image embedding + barcode fallback), Rust/Actix +
@@ -36,7 +39,25 @@ Building **C0** = auth glue (Identity service token) + small pos108 tweaks (Idem
 broker. Full design + pos108-inspection findings = `docs/shop108/` (`00-omnichannel-vision.md`,
 `01-...stock-contract.md` v0.5, `03-path-to-first-sale.md`) — SoT, don't restate here.
 
-## SCB QR Payment — Live Status (updated 2026-06-26 — DEPLOYED)
+## ⚠️ UNAPPROVED / UN-PUSHED local work — NOT on any approved-work list (status note, 2026-07-02)
+Two services exist locally under `Platform-Services/` with **no git remote** (never pushed to GitHub),
+recorded here only so future sessions don't mistake them for sanctioned scope:
+- **`customer-plat`** — 10 commits (S1 genesis → S2 own DB → S3 HTTP + Identity EdDSA auth → S4
+  cloud→branch replication outbox → S5 pull endpoint/denormalize, + a pull-cursor data-loss fix). Its
+  own `.ai_context/HANDOFF.md` says "owner approved model A, requested a plan **before any scaffold**"
+  and "push blocked by the exfil classifier (owner does it manually)" — i.e. the build ran **past** its
+  own start-gate. pos108-side work sits on three branches pushed to origin but **unmerged to main**:
+  `feat/customer-sync-applier`, `feat/customer-platform-pull` (DARK), `feat/customer-denormalize-refs`.
+- **`platform-console`** — 3-commit Super-SA console scaffold, no remote.
+
+These are **not owner-approved parallel work**. Do not treat them as active work areas or as delivered
+without explicit owner approval + reconciliation (sanction & push, or discard).
+
+## SCB QR Payment — Live Status (updated 2026-06-26 — DEPLOYED; historical snapshot)
+> Note (2026-07-02): the snapshot below is ~5 weeks old relative to code HEAD (pos108 was ~#465 here,
+> now #509) and payment work has moved far past SCB-only (2C2P card + BBL/GSB/BAY/TTB/KTB providers,
+> Payment-Platform #57–#83). Physical `.68`/`.71`/`.76` deployment claims are live-state and not
+> re-verified in this pass. Treat this section as the 2026-06-26 SCB history, not current status.
 Goal: "POS รับรู้การชำระเงิน" (POS sees a real SCB QR payment settle to PAID). Full detail = memory `pos108-scb-gateway-bridge` (SoT). Snapshot — **DB-binding model SHIPPED + DEPLOYED (staging + PROD .68)**:
 - **Config-driven `mode` flag REMOVED → per-branch DB-binding model** (pos108 **#446**, removes `APP_PAYMENT_GATEWAY__MODE`): a branch gets QR by being **assigned an SCB QR app** in admin — no env flag; no selection ⇒ cash. **SA-only gate** on branch↔app assignment (**#450**). pos108 still holds zero payment creds.
 - **Admin SCB QR-app program shipped:** catalog **list** (pos108-admin **#243**) + per-branch app **selector** in branch edit (**#245**) + catalog **Add/Edit modal** (**#247**); pos108 cloud **cred-edit relay** (**#457**). Owner screenshot-confirmed live (HQ → Payment Gateway → SCB QR app catalog; "GW Debug"/"POS108 Cloud Relay"/"Pos108 slim" all Active).

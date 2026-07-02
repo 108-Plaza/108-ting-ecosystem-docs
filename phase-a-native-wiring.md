@@ -1,9 +1,18 @@
 # Phase A — Native Wiring Spec (build guide สำหรับ device)
 
-> สถานะ: **BUILD SPEC** · 2026-06-21 · ต่อจาก [phase-a-flutter-spec.md](phase-a-flutter-spec.md)
+> สถานะ: **DONE (Phase A wiring) — device-verified** (อัปเดต 2026-07-02; เดิม 2026-06-21 = BUILD SPEC)
+> · ต่อจาก [phase-a-flutter-spec.md](phase-a-flutter-spec.md)
 > สำหรับ: คน/agent ที่ build native บนเครื่องจริง (iOS Metal / Android GL ES)
-> ของที่พร้อมแล้ว: Dart layer (✅ tests), shaders (✅ parity) ใน `packages/beauty_filter`
-> งานที่เหลือ = **wire**: capture → passes → texture. shader logic ไม่ต้องแตะ (parity ผ่านแล้ว)
+>
+> **⚠️ STATUS (2026-07-02):** native wiring is **largely complete + device-verified (A1–A5b, both
+> platforms; iOS + Android multi-face merged 2026-06-22)** — this doc's premise "งานที่เหลือ = wire" is
+> now historical. iOS routes frames through `MetalBeautyRenderer` (capture→warp→reshape→skin→composite,
+> not passthrough); Android through `CameraGlPipeline`. Two divergences from the spec below: (1) the
+> "iOS still passthrough → switch to process" note in §1 is done. (2) **Android shipped a simpler
+> direct-space pipeline** (`slim/eye/blur/facemask/smooth_simple/oes` frags — no reshape-disp/sample
+> split, no canonical-warp pair), so §0/§4/§5's canonical/split design describes the **iOS Metal**
+> build; Android is a proven variant (see `packages/beauty_filter/docs/multiface-beauty.md`). Remaining
+> = A6 fps/thermal + iOS↔Android tuning reconciliation. SoT = `packages/beauty_filter/HANDOFF.md`.
 
 ---
 

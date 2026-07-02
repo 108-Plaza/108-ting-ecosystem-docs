@@ -12,6 +12,7 @@
 - BipByte-Platform: 108Zing-related product services
 - Commerce-Platform: commerce, POS, sales, pricing, customer, branch, promotion, and related services
 - Platform-Services: shared platform services and internal utilities
+- AccountZing-Platform: central accounting ledger (double-entry GL) for POS108 + 108-Zing (owner-approved standalone repo, 2026-06-15)
 
 ## Current Active Architecture Area
 Commerce-Platform/pos108/api

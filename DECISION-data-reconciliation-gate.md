@@ -1,11 +1,20 @@
 # Decision — Data-Platform reconciliation gate (audit BLOCKER #5)
 
-> **Status:** OPEN — needs owner decision. **Owner:** ibrowe108 / Data-Platform.
+> **Status:** OPEN (value gate) — needs owner decision. **Owner:** ibrowe108 / Data-Platform.
 > **Date:** 2026-06-17 · Related: `PRODUCTION_READINESS_AUDIT.md` §BLOCKER #5.
 > **Scope:** the financial ("money Gold") publish path only. The behavioural /
 > 108Zing path is canary-proven and **not** blocked by this.
 >
-> **Progress (2026-06-17) — design + slice 0 MERGED to Data-Platform `main`:**
+> **STATUS (2026-07-02): PARTIALLY IMPLEMENTED.** The **durability** strategy (Option B pre-check)
+> shipped end-to-end and is now an enforced gate: config + runner (`stratum reconcile`, #52), persisted
+> audit trail + `RECONCILIATION_BREAKS` metric + CI Postgres (#53), and an **inline gate that blocks the
+> dependent Gold step on a row-loss break** (#55, slice 4). Config validation currently rejects any
+> strategy but `durability`. The **value** reconciliation (Option A control-total / A-intra
+> two-derivation) that this decision debates is **still deferred** and remains the open owner call
+> (Q-REC-1..5 + a pinned AccountZing read contract). Money-type is settled to **BIGINT integer minor
+> units** (Q-REC-4; migration `0003_reconciliations.sql`), not `Float64`.
+>
+> **Progress (2026-06-17, historical) — design + slice 0 MERGED to Data-Platform `main`:**
 > - Build-grounded design: `Data-Platform/docs/DESIGN_reconciliation_gate_implementation.md`
 >   ([PR #50](https://github.com/108-Plaza/Data-Platform/pull/50), **merged**). Splits the two
 >   existing docs' clashing "Option A" into three named strategies (**B** durability / **A-intra**
@@ -13,10 +22,14 @@
 > - **Slice 0 (durability pre-check) SHIPPED** ([PR #51](https://github.com/108-Plaza/Data-Platform/pull/51),
 >   **merged**, CI green): `stratum-transform::recon::DurabilityReport` (fail-closed row-count
 >   conservation) + `Promotion::{count_rows,durability_check}` + `RECONCILIATION_BREAKS` metric.
->   No owner decision needed (tolerance defaults to exact). **No DB/config/runner yet** (slices 1/3).
+>   No owner decision needed (tolerance defaults to exact). ~~No DB/config/runner yet~~ → **DB/config/
+>   runner all landed** (slices 1/3, #52/#53): `reconciliations` table + `[[reconciliations]]` config +
+>   `stratum reconcile` runner + inline enforcement (#55).
 > - **Still gated (the decisions below):** the *value* reconciliation (A-intra/A-ext) waits on
->   Q-REC-1..5 **plus** a pinned AccountZing read contract (no client exists today) and the
->   money-type call (money is `Float64` today). BLOCKER #5 is **not** cleared by slice 0 alone.
+>   Q-REC-1..5 **plus** a pinned AccountZing read contract (no client exists today). ~~money-type call
+>   (money is `Float64` today)~~ → money-type **settled to BIGINT integer minor units** (Q-REC-4,
+>   migration 0003); value-strategy code still to build. BLOCKER #5's durability half is cleared;
+>   the value half is not.
 
 ## Context
 

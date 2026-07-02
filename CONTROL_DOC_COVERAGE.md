@@ -3,7 +3,7 @@
 > Living checklist: แต่ละ repo มีเอกสารควบคุมครบตามมาตรฐาน `templates/` ไหม
 > มาตรฐาน 6 ตัว: **H**=HANDOFF.md · **C**=CLAUDE.md · **A**=docs/ARCHITECTURE.md · **M**=docs/MILESTONES.md · **D**=docs/DO_NOT_TOUCH.md · **ai**=.ai_context/
 > SoT ของกฎ/เขตห้ามแตะ: `~/.claude/CLAUDE.md` + `CLAUDE.md` + `docs/DO_NOT_TOUCH.md` (ดู ENGINEERING_CONSTITUTION.md)
-> สำรวจล่าสุด: 2026-06-18
+> สำรวจล่าสุด: 2026-07-02
 
 ## Matrix (✓ = มี · · = ไม่มี)
 
@@ -22,8 +22,11 @@
 | Commerce-Platform/pos108/apps/admin | ✓ | ✓ | · | · | · | · |
 | Commerce-Platform/pos108/apps/pos | ✓ | ✓ | · | · | · | · |
 | Commerce-Platform/pos108/apps/orders | · | · | · | · | · | · |
-| Commerce-Platform/pos108/apps/slot | · | · | · | · | · | · |
+| Commerce-Platform/pos108/apps/slot | ✓ | · | · | · | · | · |
 | Commerce-Platform/pos108/slot-api | ✓ | · | · | · | · | · |
+| Commerce-Platform/product-vision | ✓ | ✓ | · | · | · | ✓ |
+| Commerce-Platform/shop108 | · | · | · | · | · | · |
+| Commerce-Platform/storefront | ✓ | · | · | · | · | · |
 | Creator-Platform/creator | ✓ | · | ✓ | · | · | ✓ |
 | Logistics-Platform/delivery | ✓ | · | ✓ | · | · | ✓ |
 | IoT-Platform/Smart-Farm | ✓ | · | ✓ | · | · | ✓ |
@@ -31,8 +34,13 @@
 | Platform-Services/Notification | ✓ | · | ✓ | · | · | ✓ |
 | Platform-Services/Media | ✓ | · | · | · | · | · |
 | Platform-Services/Security/identity | ✓ | · | · | · | · | · |
+| Platform-Services/customer-plat ⚠️local-only/un-pushed | · | · | · | · | · | ✓ |
+| Platform-Services/platform-console ⚠️local-only/un-pushed | ✓ | · | · | · | · | · |
 
-✓ DO_NOT_TOUCH ของ AccountZing+Gateway merged 2026-06-18 (PR #14, #16) · ✅ครบ = ครบ 5 doc หลัก (ปัจจุบัน 1/22)
+✓ DO_NOT_TOUCH ของ AccountZing+Gateway merged 2026-06-18 (PR #14, #16) · ✅ครบ = ครบ 6 doc หลัก (ปัจจุบัน 1/27)
+> อัปเดต 2026-07-02: เพิ่ม product-vision, shop108, storefront (Commerce) + customer-plat, platform-console
+> (Platform-Services, **local-only ยังไม่ push** — ดู ⚠️ ใน ACTIVE_WORK.md). รวม 27 repos, coverage 53/162 (≈33%)
+> — ตัวเลขตรงกับ DOCS_GRAPH.md.
 
 ## Priority follow-ups
 1. 🔴 **AccountZing + Gateway**: commit `docs/DO_NOT_TOUCH.md` ที่ร่างไว้ (ผ่าน PR ของแต่ละ repo) — repo การเงิน guardrail สำคัญสุด

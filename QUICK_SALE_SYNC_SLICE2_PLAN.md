@@ -3,6 +3,9 @@
 > **Status:** DESIGN (2026-07-01). Slice 1 (groups model + API, cloud-side) is merged
 > (#504). This slice projects quick-sale config down to the **branch-local DB** so the
 > **offline terminal** renders groups without a live cloud call.
+> _Confirmed 2026-07-02:_ #504 is on pos108 `main` (`eaa870b`); Slice 2 (this doc — offline
+> branch-sync projection) is **not yet built** (no `project_master_data` quick_sale arm / no
+> `MASTER_DATA_TYPES` quick_sale entry in `main`).
 >
 > ⚠️ This touches the **OWNER-LOCKED offline-first sync layer** (memory
 > `pos108-offline-first-data-platform-baseline`, 7 invariants). Build in small,

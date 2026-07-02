@@ -1,8 +1,19 @@
 # Phase A — Implementation Spec (Flutter, on-device shader-first)
 
-> สถานะ: **SPEC / พร้อมลงมือ** · 2026-06-21 · ต่อจาก [video-beauty-design.md](video-beauty-design.md) rev3
+> สถานะ: **IMPLEMENTED (Phase A) — device-verified A1–A5b + multi-face** (อัปเดต 2026-07-02; เดิม 2026-06-21 = SPEC)
+> · ต่อจาก [video-beauty-design.md](video-beauty-design.md) rev3
 > เป้า Phase A: ฟิลเตอร์แต่งหน้าวิดีโอ **shader ล้วน ไม่มี NN** → on-device 100%, server โหลด 0, real-time 30fps
 > Target: **Flutter (iOS + Android)** · 1 หน้า (scope v1)
+>
+> **⚠️ STATUS (2026-07-02):** A1–A5b + multi-face are **SHIPPED + device-verified** (iPhone 15 Pro,
+> iOS 26.5, 2026-06-22) — only **A6** (fps/thermal 3-min) + iOS↔Android tuning reconciliation remain.
+> Two staleness caveats for readers: (1) the **code lives in the plugin package
+> `apps/flutter-app/packages/beauty_filter/`**, NOT the `lib/beauty/` + `ios/Classes/FilterEngine.swift`
+> layout §1 assumes (real classes: `MetalBeautyRenderer.swift` / `CameraGlPipeline.kt`). (2) The §4/§5
+> "TODO native A4/A5" passes are **done on iOS** (`ReshapeDisp/Blur/ReshapeSample` + `SkinGate/SkinSmooth/
+> Ema` shaders shipped). **Android shipped a simpler direct-space pipeline** (`slim/eye/blur/facemask/
+> smooth_simple` frags — no canonical-warp/reshape-split), so the canonical/split design below describes
+> the **iOS** implementation, not Android. SoT for current status = `packages/beauty_filter/HANDOFF.md`.
 
 ---
 
