@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-28
 **Scope of survey:** read-only across 3 layers — Payment-Platform/Gateway, pos108 cloud relay
-(`Commerce-Platform/pos108/api`), pos108-admin UI (`Commerce-Platform/pos108/apps/admin`).
+(`~/108-POS/core`), pos108-admin UI (`~/108-POS/admin`).
 **Question that started it:** "pos108-admin UI รองรับ new design ของ Payment Platform แล้วหรือยัง?"
 
 Related SoT: memory `kbank-qr-second-provider` (backend slice-by-slice history),

@@ -7,7 +7,7 @@ Gateway DB migrated 18→25 (0022 backfilled 2 live SCB creds; old tables droppe
 `/tmp/payment-pre-kbank-*.dump` on the K3s host). **E2E browser test PASSED** (SA): created a real KBank
 QR app via UI (keyed to `payment_credentials`, catalog shows provider=KBank). A read-back 500 bug found in
 testing (relay decoded gateway-nullable `terminalId`/`envId` as non-optional `String`) was fixed
-([pos108 #477](https://github.com/108-Plaza/pos108/pull/477)) and redeployed (`sha-b69368f`); edit prefill re-verified working.
+([pos108 #477](https://github.com/108-Plaza/pos108-core/pull/477)) and redeployed (`sha-b69368f`); edit prefill re-verified working.
 **Only remaining (as of 2026-06-28):** live KBank QR **mint** (blocked on the mTLS client cert +
 source-IP allowlist) — VERIFY current cert/allowlist state.
 **Companion:** `docs/PAYMENT_PLATFORM_MULTIPROVIDER_SURVEY.md` (the survey that scoped this).
@@ -36,7 +36,7 @@ path. Provider is **generic** end-to-end (`{provider}`), not an SCB mirror.
 | # | Repo | PR | What |
 |---|---|---|---|
 | 1 | Payment-Platform (Gateway) | [#71](https://github.com/108-Plaza/Payment-Platform/pull/71) (+ enum-dispatch [#72](https://github.com/108-Plaza/Payment-Platform/pull/72)) | `ProviderRouter` derives provider from `payment_credentials` (drops the dead `merchant_payment_provider` table via migration **0025**); enriches `GET /v1/admin/merchants` with `provider` per merchant. |
-| 2 | pos108 (api / cloud relay) | [#476](https://github.com/108-Plaza/pos108/pull/476) | Generic credential relay: `CredentialGatewayPort`, routes `/payment-gateway/apps` + `/{id}/credentials` (clean break of `/scb-apps`), routes by `provider` to gateway `/scb_credentials` or `/kbank_credentials`. |
+| 2 | pos108 (api / cloud relay) | [#476](https://github.com/108-Plaza/pos108-core/pull/476) | Generic credential relay: `CredentialGatewayPort`, routes `/payment-gateway/apps` + `/{id}/credentials` (clean break of `/scb-apps`), routes by `provider` to gateway `/scb_credentials` or `/kbank_credentials`. |
 | 3 | pos108-admin | [#259](https://github.com/108-Plaza/pos108-admin/pull/259) | Generic multi-provider catalog UI: provider selector + `PROVIDER_FIELDS` map + provider column + bank-agnostic i18n + e2e. |
 
 ### Generic API contract (relay ↔ admin)

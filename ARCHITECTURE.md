@@ -15,7 +15,7 @@
 - AccountZing-Platform: central accounting ledger (double-entry GL) for POS108 + 108-Zing (owner-approved standalone repo, 2026-06-15)
 
 ## Current Active Architecture Area
-Commerce-Platform/pos108/api
+~/108-POS/core
 
 ## Boundary Rules
 - Root ecosystem docs describe global direction only.
@@ -27,4 +27,4 @@ Commerce-Platform/pos108/api
 ## Current Unknowns
 - Exact platform ownership must be confirmed from existing docs/code.
 - Cross-platform integration points must be documented before changes.
-- POS108 API dependency graph must be confirmed inside Commerce-Platform/pos108/api.
+- POS108 API dependency graph must be confirmed inside ~/108-POS/core.

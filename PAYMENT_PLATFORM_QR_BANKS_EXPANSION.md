@@ -74,13 +74,13 @@ providers so a 4th–7th bank plugs into the same seam:
 8. **Migration** — **none for creds.** Only if a bank needs a side-channel column (KBank needed
    `gateway_txn_no` for exact-txn void) does a migration appear — decide per bank from its contract.
 
-### Relay — `Commerce-Platform/pos108/api` (actix monolith, active work area)
+### Relay — `~/108-POS/core` (actix monolith, active work area)
 - Already routes by `?provider=`. Likely **near-zero code** per bank — confirm the relay's provider
   allowlist/validation accepts the new string and that the admin-key relay degrades dark when unset.
   (Per-bank credential decode structs use `Option<String>` for nullable fields — the read-back null
   bug fixed in pos108 #477 is the template to follow.)
 
-### Admin — `pos108-admin` (`Commerce-Platform/pos108/apps/admin`)
+### Admin — `pos108-admin` (`~/108-POS/admin`)
 - `src/features/payment-gateway/scb-app-form-dialog.tsx`: add to `PROVIDERS[]` and `PROVIDER_FIELDS`
   (idKey, secretKey, per-bank fields). `src/lib/api/scb-app.ts`: extend the `Provider` union.
 - i18n `messages/{en,th}.json` namespace `paymentGateway.provider`: bank display name (keep copy

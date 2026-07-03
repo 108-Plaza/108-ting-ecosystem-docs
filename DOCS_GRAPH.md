@@ -10,10 +10,10 @@
 ## Coverage at a glance
 
 - Overall control-doc coverage: **53 / 162 (≈33%)** across **27 repos** / **9 platforms**.
-- Fully compliant (6/6): **only `Commerce-Platform/pos108/api`** (the active work area).
+- Fully compliant (6/6): **only `~/108-POS/core`** (the active work area).
 - Weakest standards ecosystem-wide: **MILESTONES 1/27** · **DO_NOT_TOUCH 3/27** · **ARCHITECTURE 6/27**.
 - Strongest: **HANDOFF 20/27** · **.ai_context 16/27**.
-- New since last survey: `Commerce-Platform/storefront` (1/6), and two **local-only / un-pushed**
+- New since last survey: `~/108-POS/store` (1/6), and two **local-only / un-pushed**
   Platform-Services repos — `customer-plat` (1/6) and `platform-console` (1/6) — see the ⚠️ note in
   [`ACTIVE_WORK.md`](ACTIVE_WORK.md); do not treat them as sanctioned scope.
 
@@ -114,13 +114,13 @@ directory. Re-run from the ecosystem root and update both this file and
 [`CONTROL_DOC_COVERAGE.md`](CONTROL_DOC_COVERAGE.md):
 
 ```sh
-repos=(Commerce-Platform/pos108/api AccountZing-Platform Payment-Platform/Gateway \
+repos=(~/108-POS/core AccountZing-Platform Payment-Platform/Gateway \
   Data-Platform BipByte-Platform/server BipByte-Platform/engines BipByte-Platform/realtime-edge \
   BipByte-Platform/apps/admin-web BipByte-Platform/apps/web BipByte-Platform/apps/flutter-app \
-  Commerce-Platform/pos108/apps/admin Commerce-Platform/pos108/apps/pos \
-  Commerce-Platform/pos108/apps/orders Commerce-Platform/pos108/apps/slot \
-  Commerce-Platform/pos108/slot-api Commerce-Platform/product-vision Commerce-Platform/shop108 \
-  Commerce-Platform/storefront \
+  ~/108-POS/admin ~/108-POS/apps/pos \
+  ~/108-POS/orders ~/108-POS/slot-front \
+  ~/108-POS/slot-api Commerce-Platform/product-vision Commerce-Platform/shop108 \
+  ~/108-POS/store \
   Creator-Platform/creator Logistics-Platform/delivery IoT-Platform/Smart-Farm \
   IoT-Platform/Smart-Home Platform-Services/Notification Platform-Services/Media \
   Platform-Services/Security/identity Platform-Services/customer-plat Platform-Services/platform-console)

@@ -16,13 +16,13 @@ Verification:
 
 ## E2 - POS108 API Stabilization
 Goal:
-Continue POS108 service separation under Commerce-Platform/pos108/api.
+Continue POS108 service separation under ~/108-POS/core.
 
 Active sub-project:
-- Commerce-Platform/pos108/api
+- ~/108-POS/core
 
 Read next:
-- Commerce-Platform/pos108/api/.ai_context/ (start with README.md → CONTROL_TOWER.md)
+- ~/108-POS/core/.ai_context/ (start with README.md → CONTROL_TOWER.md)
 
 ## E3 - Cross-Platform Boundary Review
 Goal:

@@ -183,6 +183,6 @@ is stalled on its **last 10%**, all on the read side.
    Identity) waits for its phase.
 
 **Cross-repo guardrail:** POS-4/5 touch the **POS108 repo** and Z-1..Z-4 touch the **108Zing repo** —
-both outside the current active area (`Commerce-Platform/pos108/api` is in-scope for POS-4/5; 108Zing is
+both outside the current active area (`~/108-POS/core` is in-scope for POS-4/5; 108Zing is
 **not**). Per project rules, **stop and get explicit approval before editing 108Zing**, and keep
 accounting/GL/finance untouched (forbidden scope). This audit changed no code.
