@@ -9,7 +9,7 @@
 
 | repo | H | C | A | M | D | ai |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|
-| Commerce-Platform/pos108/api ✅ครบ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ~/108-POS/core ✅ครบ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | AccountZing-Platform 🔴 | · | · | · | · | ✓ | ✓ |
 | Payment-Platform/Gateway 🔴 | ✓ | · | · | · | ✓ | ✓ |
 | Data-Platform | ✓ | · | · | · | · | · |
@@ -19,14 +19,14 @@
 | BipByte-Platform/apps/admin-web | · | ✓ | · | · | · | ✓ |
 | BipByte-Platform/apps/web | · | · | · | · | · | ✓ |
 | BipByte-Platform/apps/flutter-app | · | · | · | · | · | ✓ |
-| Commerce-Platform/pos108/apps/admin | ✓ | ✓ | · | · | · | · |
-| Commerce-Platform/pos108/apps/pos | ✓ | ✓ | · | · | · | · |
-| Commerce-Platform/pos108/apps/orders | · | · | · | · | · | · |
-| Commerce-Platform/pos108/apps/slot | ✓ | · | · | · | · | · |
-| Commerce-Platform/pos108/slot-api | ✓ | · | · | · | · | · |
+| ~/108-POS/admin | ✓ | ✓ | · | · | · | · |
+| ~/108-POS/apps/pos | ✓ | ✓ | · | · | · | · |
+| ~/108-POS/orders | · | · | · | · | · | · |
+| ~/108-POS/slot-front | ✓ | · | · | · | · | · |
+| ~/108-POS/slot-api | ✓ | · | · | · | · | · |
 | Commerce-Platform/product-vision | ✓ | ✓ | · | · | · | ✓ |
 | Commerce-Platform/shop108 | · | · | · | · | · | · |
-| Commerce-Platform/storefront | ✓ | · | · | · | · | · |
+| ~/108-POS/store | ✓ | · | · | · | · | · |
 | Creator-Platform/creator | ✓ | · | ✓ | · | · | ✓ |
 | Logistics-Platform/delivery | ✓ | · | ✓ | · | · | ✓ |
 | IoT-Platform/Smart-Farm | ✓ | · | ✓ | · | · | ✓ |

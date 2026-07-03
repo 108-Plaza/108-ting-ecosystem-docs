@@ -24,7 +24,7 @@
 ## 1. Goal & Scope
 
 Extract the **customer bounded context** out of the POS108 monolith
-(`Commerce-Platform/pos108/api`, crate `pos-customer`) into a **standalone central
+(`~/108-POS/core`, crate `pos-customer`) into a **standalone central
 `Customer-Platform` service** that owns the master customer registry for the whole
 ecosystem (POS108, shop108, BipByte, Loyalty).
 

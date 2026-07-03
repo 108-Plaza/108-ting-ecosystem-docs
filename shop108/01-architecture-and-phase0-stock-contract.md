@@ -1,6 +1,6 @@
 # shop108 — Marketplace Design (Architecture + Phase 0: Stock Contract)
 
-> สถานะ: DRAFT **v0.5** · 2026-06-21 · ยืนยัน sale path = `POST /sales` channel="ONLINE" (retail ไม่มีโต๊ะ); ปิด #4 (reserve ไม่ idempotent) #5 (lifecycle=soft-hold) #7 (channel field มีจริง). canonical: `~/108-Ting-Ecosystem/Commerce-Platform/pos108`
+> สถานะ: DRAFT **v0.5** · 2026-06-21 · ยืนยัน sale path = `POST /sales` channel="ONLINE" (retail ไม่มีโต๊ะ); ปิด #4 (reserve ไม่ idempotent) #5 (lifecycle=soft-hold) #7 (channel field มีจริง). canonical: `~/108-Ting-Ecosystem/~/108-POS`
 >
 > ขอบเขต: **ร้านขายสินค้าทั่วไป (retail)** — ไม่มีคอนเซปต์ร้านอาหาร (จองโต๊ะ/ครัว/lady drink). "reservation" ในเอกสารนี้ = **stock soft-hold** (กันของช่วง checkout) เท่านั้น ไม่ใช่จองโต๊ะ
 > 🎯 **GOAL = omnichannel** (ดู `00-omnichannel-vision.md`): ร้านเดียวขายครบ 3 ช่องทาง — ออฟไลน์ `channel=POS` (มีแล้ว) · ออนไลน์ `channel=ONLINE` (shop108) · BipByte `channel=BIPBYTE` (ต้องเติม enum). Phase 0 นี้ = ฐานร่วมที่ปลดล็อกทั้ง online + BipByte. `SaleChannel` ปัจจุบัน = {Pos, Online, Delivery, Mobile, Reservation} — **ยังไม่มี Bipbyte** + map ค่าไม่รู้จัก fallback POS เงียบ (ต้องแก้)

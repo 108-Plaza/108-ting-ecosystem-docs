@@ -1,13 +1,13 @@
 # 108 Ting Ecosystem Active Work
 
 ## Active Work Area
-Commerce-Platform/pos108/api
+~/108-POS/core
 
 ## Active Goal
 POS108 service separation / POS108 API stabilization.
 
 ## Active Sub-Project Handoff
-Commerce-Platform/pos108/api/.ai_context/ (tracked control system; start with README.md → CONTROL_TOWER.md)
+~/108-POS/core/.ai_context/ (tracked control system; start with README.md → CONTROL_TOWER.md)
 
 ## Approved Parallel Work (owner-approved 2026-06-15)
 **AccountZing-Platform/** — sanctioned standalone repo (central accounting ledger for POS108 +
@@ -65,7 +65,7 @@ Goal: "POS รับรู้การชำระเงิน" (POS sees a real
 - **DEPLOYED — two paths (pos108 #452/#455):** staging via the `deploy/staging` branch K3s image build (latest live: **cloud `sha-8da39c1` (#457)** + **admin `sha-bb7f67c` (#247)**, rolled out 2026-06-26 — supersedes the #454 `sha-bc5ab1b`/`sha-cc41d2a`; ⚠️ GHCR push auth-flakes intermittently → `gh run rerun --failed` re-pushes the already-built image); **PROD .68 via build-and-copy** — build the `pos108` binary on macstudio (.76, the dev box) → `scp` to .68 → swap + restart, keep `pos108.rollback-<sha>` (probed .68: binary mtime 16:36, running since 16:37; **#456** marks task complete). **.68 is binary-only** — its stale `.git` (HEAD `45ba9bd`, didn't reflect the copied-in binary) was removed 2026-06-26; track the deployed sha on macstudio, not via `git log` on .68. The .68 branch backend (kiosk .71 → `.68:5300`) now runs the DB-binding binary — this **resolves the earlier "blocked: config-driven 45ba9bd, fork A/B" state** by taking path (B).
 - Remaining = **operational verification only** (not code/deploy): mint a QR on a real branch device, pay it in the **SCB EASY Simulator** → capture→callback→cloud-webhook→nudge→branch reconcile→PAID→POS. SCB sandbox biller validity is the one external unknown.
 - Side PRs: **pos108 #447** (cloud DB pool 100→25), **pos108-admin #244** (branch-context HQ/operational menu).
-- **Per-credential `ref3_prefix` MERGED 2026-06-27** (3-repo chain, order #46→#465→#254; branches cleaned): gateway [Payment-Platform #46](https://github.com/108-Plaza/Payment-Platform/pull/46) (migration 0018, lifts hardcoded `MRC` → per-credential so a 2nd biller with a different SCB "Reference 3 Prefix" can mint without 8101) + pos108 cloud relay [#465](https://github.com/108-Plaza/pos108/pull/465) + admin Ref3-prefix form field [pos108-admin #254](https://github.com/108-Plaza/pos108-admin/pull/254). Blank ⇒ gateway defaults `MRC`. Code merged; **deploy = separate owner step**. (The SCB callback-never-arrives blocker above is unrelated/unchanged.)
+- **Per-credential `ref3_prefix` MERGED 2026-06-27** (3-repo chain, order #46→#465→#254; branches cleaned): gateway [Payment-Platform #46](https://github.com/108-Plaza/Payment-Platform/pull/46) (migration 0018, lifts hardcoded `MRC` → per-credential so a 2nd biller with a different SCB "Reference 3 Prefix" can mint without 8101) + pos108 cloud relay [#465](https://github.com/108-Plaza/pos108-core/pull/465) + admin Ref3-prefix form field [pos108-admin #254](https://github.com/108-Plaza/pos108-admin/pull/254). Blank ⇒ gateway defaults `MRC`. Code merged; **deploy = separate owner step**. (The SCB callback-never-arrives blocker above is unrelated/unchanged.)
 
 ## Current Rule
 All implementation work must stay inside the active work area unless the user explicitly approves a scope change.

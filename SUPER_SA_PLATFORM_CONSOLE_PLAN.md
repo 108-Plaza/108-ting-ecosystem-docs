@@ -189,12 +189,12 @@ The two identity-leaning choices (#1 federate + #2 impersonate) reshape the buil
   architecture** (new secret + cross-repo).
 - [x] (Zero-risk, in pos108/api, fork-independent) `AuthCtx::require_role_level()` +
   `require_global_scope()` guards — the primitive every Super-SA gate needs. **PR
-  108-Plaza/pos108#492** (additive, not yet wired; fmt/clippy/check+test green;
+  108-Plaza/pos108-core#492** (additive, not yet wired; fmt/clippy/check+test green;
   pre-existing `cargo-deny`/"Supply chain" failure on main is unrelated — zero dep
   change). Awaiting owner merge approval.
 - [x] Owner signed off on reconciled architecture (2026-06-30).
 - [x] **§4.3 step 1 — mint seam (slice 1a): MERGED.** `POST
-  /api/v1/platform/console/impersonate` (**PR 108-Plaza/pos108#494**, merged `dd5a4fb`).
+  /api/v1/platform/console/impersonate` (**PR 108-Plaza/pos108-core#494**, merged `dd5a4fb`).
   - **Follow-up fix MERGED (#496, `56c6bf5`):** the broad `web::scope("/api/v1/platform")`
     in `platform_delivery` was registered before the specific `/catalog` + `/console`
     scopes → actix shadowed them → both 404 on cloud (also revealed the **Data
@@ -215,7 +215,7 @@ The two identity-leaning choices (#1 federate + #2 impersonate) reshape the buil
   - **Ops to un-dark:** owner registers a `platform_credentials` row
     `system_code='PLATFORM_CONSOLE'` and hands the raw key to the console.
 - [x] **§4.3 step 2 — re-gate `/tenant/*` control endpoints: MERGED + DEPLOYED**
-  (**PR 108-Plaza/pos108#498**, `3b937d5`). `require_platform_control`
+  (**PR 108-Plaza/pos108-core#498**, `3b937d5`). `require_platform_control`
   (`require_role_level(SUPER_ADMIN)`+`require_global_scope`) on the 4 control handlers
   (set/clear license, create invoice, pay) → a tenant SA now gets 403; SA keeps
   GET + pay-link. Endpoint-level (no role-seeding change). **Deployed to staging
@@ -224,12 +224,12 @@ The two identity-leaning choices (#1 federate + #2 impersonate) reshape the buil
   - ⚠ Contract: tightens gating — owner to confirm `pos108-admin` SA page never
     calls a control endpoint directly (plan says it's already view+pay-only #271/#272).
 - [x] **§4.3 step 3 (slice 3a) — console overview: MERGED + DEPLOYED**
-  (**PR 108-Plaza/pos108#499**, `6a6fc9c`; staging `sha-b2333c3`, `/overview`→401 dark).
+  (**PR 108-Plaza/pos108-core#499**, `6a6fc9c`; staging `sha-b2333c3`, `/overview`→401 dark).
   `GET /api/v1/platform/console/overview` — read-only per-tenant snapshot (tenant id,
   lease+usage, derived lease status, SA accounts). Module renamed
   `platform_impersonate`→`platform_console` (one scope for `/impersonate`+`/overview`).
   - [x] **slice 3b — SA write-management: MERGED + DEPLOYED** (**PR
-    108-Plaza/pos108#500**, `a51c3d4`; staging `sha-936ee6c`, `/sa` valid-body+no-key
+    108-Plaza/pos108-core#500**, `a51c3d4`; staging `sha-936ee6c`, `/sa` valid-body+no-key
     →401 dark). Owner chose **narrow dedicated endpoints** (not widening the minted
     token): `POST /sa`, `POST /sa/{id}/reset-password`, `PATCH /sa/{id}/status` — reuse
     the audited `auth_service`, bounded TENANT_OWNER-only (404 on non-SA, no
