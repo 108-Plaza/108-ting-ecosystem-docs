@@ -9,6 +9,49 @@ POS108 service separation / POS108 API stabilization.
 ## Active Sub-Project Handoff
 ~/108-POS/core/.ai_context/ (tracked control system; start with README.md → CONTROL_TOWER.md)
 
+## POS108 — Recently Shipped (rollup updated 2026-07-09)
+Repo HEADs at this rollup: **pos108-core → #547**, **pos108-admin → #300**, **pos108-terminal → #22**
+(supersedes the "#509" figure referenced in the 2026-07-02 SCB snapshot below). All merged to their
+default branches and (except where noted) deployed to staging. Grouped by theme; PR numbers are the
+source of truth.
+
+- **Void/discount approvals (manager maker-checker, C2 flow).** Terminal raises a request → 409/pending
+  → manager approves on admin; Separation-of-Duties enforced (the raiser cannot self-approve).
+  core #522 (status endpoint), #523 (branch-scoped live pending list), #524 (real approval method);
+  admin #283/#284 (approve page + server-side grant verify), #285 (live pending list), #286/#287
+  (global notifier badge/toast/beep), #291 (prefill from terminal QR deep link); terminal #12 (void +
+  approval flow), #13 (void menu), #19 (https QR deep link → prefilled admin page).
+- **RBAC branch-scope + branch-manager UX.** core #528 (branch-scope roles + backfill migration +
+  cashier POS-grid reads), #520 (`GET /users?branchId=` pinned resolution), #542 (server-side display
+  names for branch-scoped admins); admin #288 (roles UI mirrors RBAC hierarchy), #278 (branch-context
+  nav), #295 (names-not-ids, store-type menu gating, hide HQ-only rows).
+- **Branch-locked UI hardening (2026-07-09).** admin #300 (hide branch selectors for branch-locked
+  users across ~19 pages + stop the spurious `GET /branches` 403 → "Failed to load" toast on
+  stock-locations/storage-bins/goods-receipts) + #298 (quick-sale uses the active branch). Design fact:
+  **no cross-branch operation — every user works only within their own branch.**
+- **Shifts, cash drawer & bank deposit.** core #525 (drawer-kick on cash sale), #532 (no-sale
+  open-drawer + drawer-kick print), #531 (bank deposit + reconciliation + sales-by-terminal report);
+  admin #289 (bank-deposit UI + reconciliation + report), #290 (PromptPay ทวนยอด manager key-in +
+  owner report); terminal #16 (open-drawer + mid-shift cash-count), #18 (shift drawer/cash-count).
+- **Per-branch cash safe (ตู้เซฟ).** SHIPPED design = core #544 (`branches.has_safe` toggle +
+  `CASH_PICKUP` movement) + admin #296 ("มีตู้เซฟ" per-branch toggle in branch edit) + terminal safe UI.
+  ⚠️ A parallel `CASH_DROP` implementation (core #546 / admin #297 / terminal #21) was a **duplicate and
+  was REVERTED** (core #547 / admin #299 / terminal #22). Use the #544/#296 model.
+- **Real-time PromptPay confirm (coffee-shop).** core #533 (personal PromptPay overrides gateway +
+  credit-notification auto-confirm), #534 (real-time confirm + terminal routing + shift-close ทวนยอด);
+  admin #281 (per-branch personal PromptPay QR config); terminal #17 (one-tap confirm + WS paid push +
+  chime).
+- **Table-QR pre-order + call-staff.** core #535 (staff accept-gate + acceptance expiry), #539 (product
+  modifiers + table call-staff + strict branch-scoped user management); terminal #18 (table-QR queue).
+- **Kitchen default station.** core #537 (route kitchen-unbound lines to a per-branch default station);
+  admin #293 (default-station toggle).
+- **Partial refunds (terminal).** terminal #14 (per-line partial refund) + #15 (poll/complete +
+  amount-cap fixes).
+- **Misc.** core #527 (pickup-queue handover `POST /orders/{id}/complete`), #530 (block PO of a
+  manufactured product), #536 (fix payment-method read-back mislabel), #541 (per-request-tenant settings
+  resolution), #545 (productKind list-filter test coverage — the filter contract itself shipped earlier
+  in #245); money/qty thousand-separators core-side + admin #292 + terminal #20.
+
 ## Approved Parallel Work (owner-approved 2026-06-15)
 **AccountZing-Platform/** — sanctioned standalone repo (central accounting ledger for POS108 +
 108-Zing). Approved active work area in parallel with POS108. Follows its own docs
