@@ -9,7 +9,54 @@ POS108 service separation / POS108 API stabilization.
 ## Active Sub-Project Handoff
 ~/108-POS/core/.ai_context/ (tracked control system; start with README.md → CONTROL_TOWER.md)
 
-## POS108 — Recently Shipped (rollup updated 2026-07-09)
+## Ecosystem Rollup — as of 2026-07-24
+State of the ecosystem as of 2026-07-24. Supersedes the 2026-07-09 rollup below for live-state
+facts (the older sections are kept as history). PR numbers are the source of truth.
+
+### Production cutover + live deployments (k3s on the Dell, nginx edge)
+- **108plaza.com CUT OVER to k3s (2026-07-22).** The `pos108-sell` storefront/website now runs on
+  k3s **prod** (NodePort `30820`); the old pm2 process is **retired**. nginx on the Dell fronts k3s
+  (`108plaza.com` = HTTP/2 200 from the cluster).
+- **Notification-Platform FULLY LIVE** on k3s staging (NodePort `30710`, Postfix SMTP).
+  Transactional email (welcome / purchase / download / profile, HTML) is wired into sell
+  (core #680 emails buyers on order lifecycle events). OTP delivery adapter
+  `POST /api/v1/otp` serves Identity's OTP sender (Notification-Platform #71).
+- **Secrets-Platform** — our own **TRUE-E2EE** secrets vault (Infisical dropped) — LIVE on k3s
+  staging (NodePort `30913`). ECDH P-256 + AES-GCM: the browser seals, the consuming service
+  decrypts, the vault stores **ciphertext only** (no master key; admin cannot read secrets back).
+  Rust axum + Postgres + Next.js console; auth = Identity JWT `aud=secrets` (EdDSA enforced).
+  Next: consumer rollout (Notification first) + console UI.
+- **pos108-store "108 Online" SPA** LIVE at `shop.108plaza.com` (k3s, NodePort `30830`).
+  **BFF staff token retired 2026-07-24** (store #19, image `sha-5c71542`) — the storefront no
+  longer ships or holds a staff token; public/platform-key read surfaces + order-token settlement
+  replaced it (core #673–#678).
+- **Customer-Platform** (central customer/CRM registry, split out of Loyalty-Platform:
+  Customer = identity, Loyalty = points) LIVE on k3s staging (NodePort `30114`).
+
+### Org-wide engineering
+- **sqlx 0.9 migration COMPLETE across all 16 Rust repos** (core #672, Identity #39, + 14 more).
+  Standard: pin `sqlx = "0.9"`, wrap dynamic SQL in `sqlx::AssertSqlSafe(..)`; cargo-deny bans
+  sqlx < 0.9 as the CI teeth.
+- **CI runners:** 5 shared org runners (`dell-org-108plaza` + `dell-org-ci-1..4`) serve all
+  108-Plaza repos via a runner group — no new per-repo runners for org repos. Per-repo runners
+  remain only for personal forks + the `secrets-runner` on the Dell (ibrowe) for Secrets-Platform.
+
+### POS108 recent ships (since the 2026-07-09 rollup)
+- **Walk-in public ordering** (core #659): public guest order-ahead (dine-in/takeaway/delivery)
+  through the orders app, with staff accept-gate + acceptance TTL.
+- **Demo → registered in-app activation** (core #662/#664 + terminal #81): a demo install
+  activates with the key alone (key resolves its cloud host via control-plane `POST /resolve`),
+  no reinstall.
+- **Operator console** at `admin.108plaza.com`: owner SaaS back-office on the sell process
+  (control-plane operator read API core #653/#654, plan catalog #655).
+- **Buyer Identity provisioning** (core #652): provisioning creates the buyer's 108plaza.com
+  portal login (Identity `aud=customer`) and links it to Customer-Platform.
+- **Terminal:** i18n from OS locale (#67, Slint bundle-translations), boot-time self-update
+  (rolling `terminal` tag), signed Mac/Windows/Linux bundles, installer remote-assist over
+  consented reverse SSH (#76–#78), Linux kiosk-unit path fix (#80).
+- **Identity:** OTP passwordless login (#36) + Google OAuth (env-var config, not SQL).
+
+## POS108 — Recently Shipped (rollup updated 2026-07-09 — historical)
 Repo HEADs at this rollup: **pos108-core → #547**, **pos108-admin → #300**, **pos108-terminal → #22**
 (supersedes the "#509" figure referenced in the 2026-07-02 SCB snapshot below). All merged to their
 default branches and (except where noted) deployed to staging. Grouped by theme; PR numbers are the
