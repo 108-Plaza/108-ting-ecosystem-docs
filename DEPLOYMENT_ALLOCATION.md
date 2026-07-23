@@ -7,6 +7,20 @@
 >
 > **Status:** authored 2026-06-19. Decisions are made (not open questions); assumptions
 > are stated inline.
+>
+> **Live-state update (2026-07-24)** — services that went live after the tables below were
+> authored (actual assigned NodePorts; some diverge from the original family scheme —
+> treat this note + the running cluster as authoritative, VERIFY live-state):
+> - **pos108-sell** (108plaza.com site + operator console `admin.108plaza.com`) — k3s **prod**,
+>   NodePort **`30820`**; `108plaza.com` cut over to k3s 2026-07-22, the pm2 process is retired.
+> - **pos108-store** "108 Online" SPA (`shop.108plaza.com`) — NodePort **`30830`**;
+>   BFF staff token retired 2026-07-24 (store #19).
+> - **Notification-Platform** — staging NodePort **`30710`** (Postfix SMTP); supersedes the
+>   interim `30084` noted below.
+> - **Identity** — LIVE at `id.108plaza.net`, staging NodePort **`30110`** (as allocated).
+> - **Customer-Platform** — staging NodePort **`30114`** (helm release `customer`, `ting-service` chart).
+> - **Secrets-Platform** — staging NodePort **`30913`** (own true-E2EE vault; auth = Identity
+>   JWT `aud=secrets`).
 
 ---
 

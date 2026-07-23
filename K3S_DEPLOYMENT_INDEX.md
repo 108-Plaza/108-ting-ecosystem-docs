@@ -8,6 +8,13 @@
 > `tixtox`), image-processing-engine.
 > _Note (2026-07-02): the pinned `sha-8824860` (≈ main #426) is now many PRs behind head (#509) — a
 > deliberate pin, but re-confirm the running rev. BipByte deployable stack = 57 Rust services (not 60)._
+>
+> _Update (2026-07-24): much more is live since — pos108-sell on k3s **prod** `30820`
+> (108plaza.com cut over, pm2 retired), pos108-store `30830` (shop.108plaza.com),
+> Notification `30710` (renumbered from 30084), Identity `30110` (id.108plaza.net),
+> Customer-Platform `30114`, Secrets-Platform `30913`. See the live-state note at the top of
+> [DEPLOYMENT_ALLOCATION.md](DEPLOYMENT_ALLOCATION.md) and the 2026-07-24 rollup in
+> [ACTIVE_WORK.md](ACTIVE_WORK.md)._
 
 ---
 
