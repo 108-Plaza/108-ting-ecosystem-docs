@@ -1,10 +1,92 @@
 # 108 Ting Ecosystem Architecture
 
-> **Status:** overview refreshed 2026-07-24. Live-state facts (ports/hosts) are VERIFY, not
-> git-checkable; per-service detail lives in each platform's own docs.
+> **Status:** overview refreshed 2026-07-24; structure diagram added 2026-07-25. Live-state facts
+> (ports/hosts) are VERIFY, not git-checkable; per-service detail lives in each platform's own docs.
 
 ## Purpose
 108 Ting Ecosystem is the root workspace that contains multiple platform domains. It provides the high-level organization and cross-platform boundaries for the 108 product ecosystem.
+
+## Structure diagram
+
+Live service map — how clients reach the edge, which frontends fan into the single POS
+cloud API, and how the API talks to the central platforms and data stores. Ports are staging
+NodePorts unless marked `(prod)`; the port families are explained in
+[`DEPLOYMENT_ALLOCATION.md`](DEPLOYMENT_ALLOCATION.md).
+
+```mermaid
+graph TB
+  classDef client fill:#e7ecf6,stroke:#274690,color:#0e1b3a;
+  classDef edge   fill:#efeafa,stroke:#5b3ea6,color:#241247;
+  classDef fe     fill:#faeeda,stroke:#854f0b,color:#412402;
+  classDef core   fill:#e1f5ee,stroke:#0f6e56,color:#04342c;
+  classDef plat   fill:#eaf3de,stroke:#3b6d11,color:#173404;
+  classDef data   fill:#fcebeb,stroke:#a32d2d,color:#501313;
+
+  TERM["pos108-terminal<br/>Rust/Slint POS · branch devices"]:::client
+  GUEST["Guests / customers<br/>table-QR · walk-in · web"]:::client
+
+  NGINX["host nginx edge — Dell node (ibrowe)<br/>routes by hostname · certbot TLS"]:::edge
+
+  subgraph FE["Frontends / apps · NodePort family 303xx"]
+    direction LR
+    ADMIN["pos108-admin · 30310<br/>tenant back-office (Next.js)"]:::fe
+    ORDERS["pos108-orders · 30312<br/>table-QR / walk-in (SolidJS)"]:::fe
+    STORE["pos108-store · 30830<br/>shop.108plaza.com (SolidJS+BFF)"]:::fe
+    SELL["pos108-sell · 30820 (prod)<br/>108plaza.com + operator console"]:::fe
+  end
+
+  CORE["pos108-core · 30810<br/>POS cloud API + control-plane<br/>branch nodes = same binary, branch mode"]:::core
+
+  subgraph PLAT["Central platforms"]
+    direction LR
+    ID["Identity · 30110<br/>EdDSA JWT · OTP · Google OAuth"]:::plat
+    CUST["Customer · 30114<br/>CRM registry · phone-first"]:::plat
+    LOY["Loyalty<br/>points · wallet · gift-card"]:::plat
+    NOTIF["Notification · 30710<br/>email + OTP · Postfix SMTP"]:::plat
+    SEC["Secrets · 30913<br/>TRUE-E2EE vault"]:::plat
+    MEDIA["Media<br/>uploads · CDN · live"]:::plat
+    PAY["Payment · 30210<br/>SCB QR · 2C2P · multi-bank"]:::plat
+  end
+
+  AZ["AccountZing<br/>double-entry GL · ClusterIP (internal)"]:::plat
+  BIP["BipByte / 108Zing · 30910<br/>57-service Rust stack · ns tixtox"]:::plat
+
+  PG["pg-central + redis-central (staging)<br/>Mac mini .68 · PG16 + Redis (prod)"]:::data
+
+  TERM -->|X-Terminal-Id| CORE
+  GUEST --> NGINX
+  NGINX --> ADMIN
+  NGINX --> ORDERS
+  NGINX --> STORE
+  NGINX --> SELL
+  ADMIN -->|same-origin /api| CORE
+  ORDERS -->|public token| CORE
+  STORE -->|BFF platform-key| CORE
+  SELL -->|auth| ID
+  BIP -->|POST /api/v1/sales| CORE
+
+  CORE --> ID
+  CORE --> CUST
+  CORE -. sale.completed .-> LOY
+  CORE --> PAY
+  CORE -->|outbox events| NOTIF
+  CORE --> AZ
+  ID -->|OTP adapter| NOTIF
+  CUST --- LOY
+
+  CORE --> PG
+  ID --> PG
+  CUST --> PG
+  LOY --> PG
+  NOTIF --> PG
+  SEC --> PG
+  PAY --> PG
+```
+
+Legend: blue = clients · purple = edge · amber = frontends · green = POS core ·
+olive = central platforms · red = data. Solid arrow = synchronous call; dotted = async
+event (`sale.completed` → Loyalty accrual, order-independent); plain line = same phone-key
+domain (Customer ↔ Loyalty).
 
 ## Live Platform Map (as of 2026-07-24)
 
