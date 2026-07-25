@@ -12,21 +12,23 @@
 
 ## Coverage at a glance
 
-- Overall control-doc coverage: **67 / 156 (≈43%)** across **26 repos** (9 platform groups + the
+- Overall control-doc coverage: **72 / 156 (≈46%)** across **26 repos** (9 platform groups + the
   `108-platform-services` monorepo).
-- Fully compliant (6/6): **only `pos108-core`** (the active work area).
+- Fully compliant (6/6): **`pos108-core`** and, as of 2026-07-25, **`108-platform-services`** (its
+  ARCHITECTURE/MILESTONES/DO_NOT_TOUCH/.ai_context were completed in one PR, #21).
 - **CLAUDE.md rollout (2026-07-25):** CLAUDE.md was added to every repo that was missing it (the
   ecosystem `CLAUDE.template.md` resolved per repo — real build/test commands + guardrails), so
   **CLAUDE coverage jumped 8/26 → 24/26** — every repo now has one except the skipped `shop108`
   (personal fork) and the local-only `platform-console`.
-- Weakest standards ecosystem-wide: **MILESTONES 1/26** · **DO_NOT_TOUCH 3/26** · **ARCHITECTURE 6/26**.
-- Strongest: **CLAUDE 24/26** · **HANDOFF 18/26** · **.ai_context 15/26**.
+- Weakest standards ecosystem-wide: **MILESTONES 2/26** · **DO_NOT_TOUCH 4/26** · **ARCHITECTURE 7/26**.
+- Strongest: **CLAUDE 24/26** · **HANDOFF 19/26** · **.ai_context 16/26**.
 - **Backend consolidation (2026-07):** `identity`, `customer`, `loyalty`, `notify`, `secrets` are now
-  `services/*` in the **`108-platform-services` monorepo** (one repo, now **1/6** — CLAUDE.md added);
-  their old standalone repos (`Identity-/Customer-/Loyalty-/Notification-/Secrets-Platform`) were
-  **archived 2026-07-24** and are dropped from this matrix, along with the superseded local-only
-  `customer-plat`. **`pos108-core` stays a separate repo** (a Wave-3 fold-in was reverted,
-  108-platform-services #15). `shop108` (personal fork) was **skipped** by the rollout.
+  `services/*` in the **`108-platform-services` monorepo** (one repo, now **6/6** — HANDOFF #19 +
+  ARCHITECTURE/MILESTONES/DO_NOT_TOUCH/.ai_context #21 completed the spine); their old standalone
+  repos (`Identity-/Customer-/Loyalty-/Notification-/Secrets-Platform`) were **archived 2026-07-24**
+  and are dropped from this matrix, along with the superseded local-only `customer-plat`.
+  **`pos108-core` stays a separate repo** (a Wave-3 fold-in was reverted, 108-platform-services #15).
+  `shop108` (personal fork) was **skipped** by the CLAUDE.md rollout.
 - `Payment-Platform/Gateway-scb-soft` is a **non-git working copy** (no `.git`) → excluded.
   `platform-console` remains **local-only / un-pushed** (see the ⚠️ note in
   [`ACTIVE_WORK.md`](ACTIVE_WORK.md)); do not treat it as sanctioned scope.
@@ -48,7 +50,7 @@ graph TD
   ECO --> CR[Creator-Platform]
   ECO --> LOG[Logistics-Platform]
 
-  BE --> BE1["(one repo) · 1/6<br/>identity · customer · loyalty · notify · secrets"]:::partial
+  BE --> BE1["(one repo) · 6/6<br/>identity · customer · loyalty · notify · secrets"]:::full
 
   COM --> COM1["pos108-core · 6/6"]:::full
   COM --> COM2["pos108-admin · 3/6"]:::partial
@@ -107,7 +109,7 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
 | BipByte-Platform | apps/admin-web | · | ✓ | · | · | · | ✓ | 2 |
 | BipByte-Platform | apps/web | · | ✓ | · | · | · | ✓ | 2 |
 | BipByte-Platform | apps/flutter-app | · | ✓ | · | · | · | ✓ | 2 |
-| 108-platform-services | (monorepo: identity/customer/loyalty/notify/secrets) | · | ✓ | · | · | · | · | 1 |
+| 108-platform-services | (monorepo: identity/customer/loyalty/notify/secrets) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | **6** |
 | Platform-Services | Media | ✓ | ✓ | ✓ | · | · | · | 3 |
 | Platform-Services | Payroll | · | ✓ | · | · | · | ✓ | 2 |
 | Platform-Services | platform-console *(local-only, un-pushed)* | ✓ | · | · | · | · | · | 1 |
@@ -118,7 +120,7 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
 | Data-Platform | (repo root) | ✓ | ✓ | · | · | · | · | 2 |
 | Creator-Platform | creator | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
 | Logistics-Platform | delivery | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
-| **per-doc total** | **(/26)** | **18** | **24** | **6** | **1** | **3** | **15** | **67** |
+| **per-doc total** | **(/26)** | **19** | **24** | **7** | **2** | **4** | **16** | **72** |
 
 ## Survey caveats (2026-07-25)
 
@@ -128,8 +130,9 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
   (H/A/M/D/ai) are from the Mac Studio scan below and may lag origin for the dirty/diverged repos noted.
 - **Backend consolidation reflected:** `identity`, `customer`, `loyalty`, `notify`, `secrets` were
   folded into the `108-platform-services` monorepo and their standalone repos archived (2026-07-24), so they
-  are no longer separate matrix rows — `108-platform-services` is one row (1/6, CLAUDE.md added), verified
-  via the GitHub API (it has no local Mac Studio checkout). The local-only `customer-plat` (precursor to
+  are no longer separate matrix rows — `108-platform-services` is one row, verified via the GitHub API
+  (it has no local Mac Studio checkout). It reached **6/6 on 2026-07-25** (CLAUDE #17, HANDOFF #19,
+  ARCHITECTURE/MILESTONES/DO_NOT_TOUCH/.ai_context #21). The local-only `customer-plat` (precursor to
   `customer`) is dropped as superseded. `pos108-core` stays a separate repo (a Wave-3 fold-in was reverted).
 - **Surveyed on the Mac Studio**, checking each repo's currently checked-out branch. Repos updated
   cleanly (`git pull --ff-only`): admin, slot-api, slot-front, product-vision, shop108, BipByte
