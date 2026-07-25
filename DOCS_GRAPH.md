@@ -6,26 +6,28 @@
 > Companion to [`CONTROL_DOC_COVERAGE.md`](CONTROL_DOC_COVERAGE.md) (the living checklist) and
 > [`ARCHITECTURE.md`](ARCHITECTURE.md) (the platform map).
 > Surveyed live on the **Mac Studio** checkouts: **2026-07-25** (`git pull --ff-only` first, then
-> scan); `108-backend` checked via the GitHub API (no local checkout). ⚠️ Coverage reflects the
+> scan); `108-platform-services` checked via the GitHub API (no local checkout). ⚠️ Coverage reflects the
 > **currently checked-out branch** per repo — several sit on feature branches or had local edits
 > (see "Survey caveats" below), so a few rows may differ from `origin/main`. Previous survey: 2026-07-02.
 
 ## Coverage at a glance
 
-- Overall control-doc coverage: **51 / 156 (≈33%)** across **26 repos** (9 platform groups + the
-  `108-backend` monorepo).
-- Fully compliant (6/6): **only `pos108-core`** (the active work area) — unchanged since the last survey.
+- Overall control-doc coverage: **67 / 156 (≈43%)** across **26 repos** (9 platform groups + the
+  `108-platform-services` monorepo).
+- Fully compliant (6/6): **only `pos108-core`** (the active work area).
+- **CLAUDE.md rollout (2026-07-25):** CLAUDE.md was added to every repo that was missing it (the
+  ecosystem `CLAUDE.template.md` resolved per repo — real build/test commands + guardrails), so
+  **CLAUDE coverage jumped 8/26 → 24/26** — every repo now has one except the skipped `shop108`
+  (personal fork) and the local-only `platform-console`.
 - Weakest standards ecosystem-wide: **MILESTONES 1/26** · **DO_NOT_TOUCH 3/26** · **ARCHITECTURE 6/26**.
-- Strongest: **HANDOFF 18/26** · **.ai_context 15/26**.
+- Strongest: **CLAUDE 24/26** · **HANDOFF 18/26** · **.ai_context 15/26**.
 - **Backend consolidation (2026-07):** `identity`, `customer`, `loyalty`, `notify`, `secrets` are now
-  `services/*` in the **`108-backend` monorepo** (one repo, **0/6** control docs so far); their old
-  standalone repos (`Identity-/Customer-/Loyalty-/Notification-/Secrets-Platform`) were **archived
-  2026-07-24** and are dropped from this matrix, along with the superseded local-only `customer-plat`.
-  **`pos108-core` stays a separate repo** (a Wave-3 fold-in was reverted, 108-backend #15).
-- **Since 2026-07-02:** the `pos108` monorepo was split into per-repo checkouts under `~/108-POS`
-  (`core` / `admin` / `terminal` / `orders` / `store` + `slot-api` / `slot-front`). Doc gains:
-  **Media** 1/6 → 3/6 (added CLAUDE + ARCHITECTURE), **delivery** 3/6 → 4/6 (added CLAUDE, this session).
-  `Payment-Platform/Gateway-scb-soft` is a **non-git working copy** (no `.git`) → excluded.
+  `services/*` in the **`108-platform-services` monorepo** (one repo, now **1/6** — CLAUDE.md added);
+  their old standalone repos (`Identity-/Customer-/Loyalty-/Notification-/Secrets-Platform`) were
+  **archived 2026-07-24** and are dropped from this matrix, along with the superseded local-only
+  `customer-plat`. **`pos108-core` stays a separate repo** (a Wave-3 fold-in was reverted,
+  108-platform-services #15). `shop108` (personal fork) was **skipped** by the rollout.
+- `Payment-Platform/Gateway-scb-soft` is a **non-git working copy** (no `.git`) → excluded.
   `platform-console` remains **local-only / un-pushed** (see the ⚠️ note in
   [`ACTIVE_WORK.md`](ACTIVE_WORK.md)); do not treat it as sanctioned scope.
 
@@ -36,7 +38,7 @@ graph TD
   ECO["108 Ting Ecosystem — governance spine (root)<br/>HANDOFF · CLAUDE · ENGINEERING_CONSTITUTION · ACTIVE_WORK<br/>ARCHITECTURE · DO_NOT_TOUCH · CONTROL_DOC_COVERAGE · DEPLOYMENT_STANDARD_K3S"]:::root
 
   ECO --> COM[Commerce-Platform]
-  ECO --> BE[108-backend monorepo]
+  ECO --> BE[108-platform-services monorepo]
   ECO --> BIP[BipByte-Platform]
   ECO --> PS[Platform-Services]
   ECO --> IOT[IoT-Platform]
@@ -46,36 +48,36 @@ graph TD
   ECO --> CR[Creator-Platform]
   ECO --> LOG[Logistics-Platform]
 
-  BE --> BE1["(one repo) · 0/6<br/>identity · customer · loyalty · notify · secrets"]:::empty
+  BE --> BE1["(one repo) · 1/6<br/>identity · customer · loyalty · notify · secrets"]:::partial
 
   COM --> COM1["pos108-core · 6/6"]:::full
   COM --> COM2["pos108-admin · 3/6"]:::partial
-  COM --> COM3["pos108-terminal · 1/6"]:::partial
-  COM --> COM4["pos108-orders · 0/6"]:::empty
-  COM --> COM5["pos108-store · 1/6"]:::partial
-  COM --> COM6["slot-api · 1/6"]:::partial
-  COM --> COM7["slot-front · 1/6"]:::partial
+  COM --> COM3["pos108-terminal · 2/6"]:::partial
+  COM --> COM4["pos108-orders · 1/6"]:::partial
+  COM --> COM5["pos108-store · 2/6"]:::partial
+  COM --> COM6["slot-api · 2/6"]:::partial
+  COM --> COM7["slot-front · 2/6"]:::partial
   COM --> COM8["product-vision · 3/6"]:::partial
-  COM --> COM9["shop108 · 0/6"]:::empty
+  COM --> COM9["shop108 · 0/6 (skipped — fork)"]:::empty
 
   BIP --> BIP1["server · 4/6"]:::partial
   BIP --> BIP2["engines · 3/6"]:::partial
-  BIP --> BIP3["realtime-edge · 1/6"]:::partial
+  BIP --> BIP3["realtime-edge · 2/6"]:::partial
   BIP --> BIP4["apps/admin-web · 2/6"]:::partial
-  BIP --> BIP5["apps/web · 1/6"]:::partial
-  BIP --> BIP6["apps/flutter-app · 1/6"]:::partial
+  BIP --> BIP5["apps/web · 2/6"]:::partial
+  BIP --> BIP6["apps/flutter-app · 2/6"]:::partial
 
   PS --> PS1["Media · 3/6"]:::partial
-  PS --> PS2["Payroll · 1/6"]:::partial
+  PS --> PS2["Payroll · 2/6"]:::partial
   PS --> PS3["platform-console · 1/6 (local-only, un-pushed)"]:::empty
 
-  IOT --> IOT1["Smart-Farm · 3/6"]:::partial
-  IOT --> IOT2["Smart-Home · 2/6"]:::partial
+  IOT --> IOT1["Smart-Farm · 4/6"]:::partial
+  IOT --> IOT2["Smart-Home · 3/6"]:::partial
 
-  PAY --> PAY1["Gateway · 3/6"]:::partial
-  AZ  --> AZ1["(repo root) · 2/6"]:::partial
-  DP  --> DP1["(repo root) · 1/6"]:::partial
-  CR  --> CR1["creator · 3/6"]:::partial
+  PAY --> PAY1["Gateway · 4/6"]:::partial
+  AZ  --> AZ1["(repo root) · 3/6"]:::partial
+  DP  --> DP1["(repo root) · 2/6"]:::partial
+  CR  --> CR1["creator · 4/6"]:::partial
   LOG --> LOG1["delivery · 4/6"]:::partial
 
   classDef root fill:#E1F5EE,stroke:#0F6E56,color:#04342C;
@@ -92,39 +94,43 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
 |---|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | Commerce-Platform | pos108-core | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | **6** |
 | Commerce-Platform | pos108-admin | ✓ | ✓ | · | · | · | ✓ | 3 |
-| Commerce-Platform | pos108-terminal | ✓ | · | · | · | · | · | 1 |
-| Commerce-Platform | pos108-orders | · | · | · | · | · | · | 0 |
-| Commerce-Platform | pos108-store | ✓ | · | · | · | · | · | 1 |
-| Commerce-Platform | slot-api | ✓ | · | · | · | · | · | 1 |
-| Commerce-Platform | slot-front | ✓ | · | · | · | · | · | 1 |
+| Commerce-Platform | pos108-terminal | ✓ | ✓ | · | · | · | · | 2 |
+| Commerce-Platform | pos108-orders | · | ✓ | · | · | · | · | 1 |
+| Commerce-Platform | pos108-store | ✓ | ✓ | · | · | · | · | 2 |
+| Commerce-Platform | slot-api | ✓ | ✓ | · | · | · | · | 2 |
+| Commerce-Platform | slot-front | ✓ | ✓ | · | · | · | · | 2 |
 | Commerce-Platform | product-vision | ✓ | ✓ | · | · | · | ✓ | 3 |
-| Commerce-Platform | shop108 | · | · | · | · | · | · | 0 |
+| Commerce-Platform | shop108 *(skipped — personal fork)* | · | · | · | · | · | · | 0 |
 | BipByte-Platform | server | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
 | BipByte-Platform | engines | ✓ | ✓ | · | · | · | ✓ | 3 |
-| BipByte-Platform | realtime-edge | ✓ | · | · | · | · | · | 1 |
+| BipByte-Platform | realtime-edge | ✓ | ✓ | · | · | · | · | 2 |
 | BipByte-Platform | apps/admin-web | · | ✓ | · | · | · | ✓ | 2 |
-| BipByte-Platform | apps/web | · | · | · | · | · | ✓ | 1 |
-| BipByte-Platform | apps/flutter-app | · | · | · | · | · | ✓ | 1 |
-| 108-backend | (monorepo: identity/customer/loyalty/notify/secrets) | · | · | · | · | · | · | 0 |
+| BipByte-Platform | apps/web | · | ✓ | · | · | · | ✓ | 2 |
+| BipByte-Platform | apps/flutter-app | · | ✓ | · | · | · | ✓ | 2 |
+| 108-platform-services | (monorepo: identity/customer/loyalty/notify/secrets) | · | ✓ | · | · | · | · | 1 |
 | Platform-Services | Media | ✓ | ✓ | ✓ | · | · | · | 3 |
-| Platform-Services | Payroll | · | · | · | · | · | ✓ | 1 |
+| Platform-Services | Payroll | · | ✓ | · | · | · | ✓ | 2 |
 | Platform-Services | platform-console *(local-only, un-pushed)* | ✓ | · | · | · | · | · | 1 |
-| IoT-Platform | Smart-Farm | ✓ | · | ✓ | · | · | ✓ | 3 |
-| IoT-Platform | Smart-Home | ✓ | · | · | · | · | ✓ | 2 |
-| Payment-Platform | Gateway | ✓ | · | · | · | ✓ | ✓ | 3 |
-| AccountZing-Platform | (repo root) | · | · | · | · | ✓ | ✓ | 2 |
-| Data-Platform | (repo root) | ✓ | · | · | · | · | · | 1 |
-| Creator-Platform | creator | ✓ | · | ✓ | · | · | ✓ | 3 |
+| IoT-Platform | Smart-Farm | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
+| IoT-Platform | Smart-Home | ✓ | ✓ | · | · | · | ✓ | 3 |
+| Payment-Platform | Gateway | ✓ | ✓ | · | · | ✓ | ✓ | 4 |
+| AccountZing-Platform | (repo root) | · | ✓ | · | · | ✓ | ✓ | 3 |
+| Data-Platform | (repo root) | ✓ | ✓ | · | · | · | · | 2 |
+| Creator-Platform | creator | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
 | Logistics-Platform | delivery | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
-| **per-doc total** | **(/26)** | **18** | **8** | **6** | **1** | **3** | **15** | **51** |
+| **per-doc total** | **(/26)** | **18** | **24** | **6** | **1** | **3** | **15** | **67** |
 
 ## Survey caveats (2026-07-25)
 
+- **The CLAUDE.md (C) column is authoritative as of the 2026-07-25 rollout** — re-verified against each
+  repo's GitHub default branch, not the Mac Studio working tree. Every pushed repo except `shop108`
+  (personal fork, skipped) and the local-only `platform-console` now has CLAUDE.md. The other five columns
+  (H/A/M/D/ai) are from the Mac Studio scan below and may lag origin for the dirty/diverged repos noted.
 - **Backend consolidation reflected:** `identity`, `customer`, `loyalty`, `notify`, `secrets` were
-  folded into the `108-backend` monorepo and their standalone repos archived (2026-07-24), so they
-  are no longer separate matrix rows — `108-backend` is one row (0/6), verified via the GitHub API
-  (it has no local Mac Studio checkout). The local-only `customer-plat` (precursor to `customer`) is
-  dropped as superseded. `pos108-core` stays a separate repo (a Wave-3 fold-in was reverted).
+  folded into the `108-platform-services` monorepo and their standalone repos archived (2026-07-24), so they
+  are no longer separate matrix rows — `108-platform-services` is one row (1/6, CLAUDE.md added), verified
+  via the GitHub API (it has no local Mac Studio checkout). The local-only `customer-plat` (precursor to
+  `customer`) is dropped as superseded. `pos108-core` stays a separate repo (a Wave-3 fold-in was reverted).
 - **Surveyed on the Mac Studio**, checking each repo's currently checked-out branch. Repos updated
   cleanly (`git pull --ff-only`): admin, slot-api, slot-front, product-vision, shop108, BipByte
   server/engines/realtime-edge/apps-admin-web/apps-web, Media, Payroll, Data, creator, delivery.
@@ -136,8 +142,12 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
 - On **feature branches** at survey time (not their default branch): engines, apps/admin-web,
   apps/web, apps/flutter-app, Smart-Home, AccountZing, pos108-orders. Doc presence rarely differs
   across branches, but re-survey on `main` if a row looks off.
-- `delivery` shows **4/6** (CLAUDE.md added this session, Logistics-Platform #20) — the one row that
-  reflects an origin change made after the Mac Studio pull.
+- **CLAUDE.md rollout (2026-07-25):** CLAUDE.md was merged into every remaining repo that lacked it —
+  `pos108_slot_api`, `pos108-slot-front`, `tixtox-realtime-edge`, `tixtox-web`, `tixtox-clone-frontend`,
+  `Smart-Farm`, `Smart-Home`, `Data-Platform`, `Creator-Platform`, `108-platform-services`, and the
+  finance repos `Payroll-Platform`, `Payment-Platform`, `AccountZing-Platform` (plus `Logistics-Platform`
+  delivery earlier). Each is the ecosystem `CLAUDE.template.md` resolved with the repo's real build/test
+  commands; finance repos got a tailored guard. `shop108` was skipped (personal fork).
 - `Payment-Platform/Gateway-scb-soft` has **no `.git`** (a soft working copy) → not counted as a repo.
 
 ## How to refresh
@@ -176,11 +186,11 @@ for r in $repos; do
 done
 ```
 
-`108-backend` has no Mac Studio checkout — survey it against GitHub (default branch):
+`108-platform-services` has no Mac Studio checkout — survey it against GitHub (default branch):
 
 ```sh
 for f in HANDOFF.md CLAUDE.md docs/ARCHITECTURE.md docs/MILESTONES.md docs/DO_NOT_TOUCH.md .ai_context; do
-  gh api "repos/108-Plaza/108-backend/contents/$f" >/dev/null 2>&1 && echo "x $f" || echo ". $f"
+  gh api "repos/108-Plaza/108-platform-services/contents/$f" >/dev/null 2>&1 && echo "x $f" || echo ". $f"
 done
 ```
 
