@@ -34,18 +34,18 @@
 | IoT-Platform/Smart-Home | ✓ | ✓ | · | · | · | ✓ |
 | **108-platform-services** ✅ครบ (monorepo: identity/customer/loyalty/notify/secrets) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Platform-Services/Media | ✓ | ✓ | ✓ | · | · | · |
-| Platform-Services/Payroll | · | ✓ | · | · | · | ✓ |
+| Platform-Services/Payroll | ✓ | ✓ | · | · | · | ✓ |
 | Platform-Services/platform-console ⚠️local-only/un-pushed | ✓ | · | · | · | · | · |
-| **รวม (/26)** | **20** | **24** | **8** | **3** | **4** | **16** |
+| **รวม (/26)** | **21** | **24** | **8** | **3** | **4** | **16** |
 
 ✓ DO_NOT_TOUCH ของ AccountZing+Gateway merged 2026-06-18 (PR #14, #16) · ✅ครบ = ครบ 6 doc หลัก (ปัจจุบัน **3/26**)
-> อัปเดต 2026-07-25: **AccountZing ครบ 6/6** — เติม root `HANDOFF.md` (PR #34) ต่อจาก ARCHITECTURE+MILESTONES
-> (#33). ระหว่างเขียนพบว่า `.ai_context/HANDOFF.md` เดิม claim ว่ามี cargo-fmt gate สีแดงค้างอยู่บน branch
-> `chore/cargo-fmt` — **เช็คจริงแล้วเขียวทั้งคู่บน main** (`cargo fmt --check` + `cargo check`) และ branch
-> นั้นไม่มีอยู่แล้ว (เอกสารเดิมล้าสมัย ไม่ใช่สถานะจริง) — HANDOFF ใหม่ระบุไว้ชัดเจน. รวม **26 repos,
-> coverage 74 → 75/156 (≈48%)** — **AccountZing เป็น repo ที่ 3 ที่ครบ 6/6** ต่อจาก pos108-core +
-> 108-platform-services.
-> ก่อนหน้า: **`108-platform-services` ครบ 6/6** (PR #21) ต่อจาก CLAUDE #17 + HANDOFF #19. repo เดิม
+> อัปเดต 2026-07-25: **Payroll เพิ่ม root `HANDOFF.md`** (PR #12) → **2/6 → 3/6**. ระหว่างเขียนพบว่า
+> `.ai_context/HANDOFF.md` เดิม claim ว่า CI แดงเพราะ Actions billing wall — **เช็คจริงแล้ว CI เขียวบน main**
+> (`050ae85`, 2026-07-22); และ `active/extraction-task.md` claim ว่า Slice 4b/5 ยังค้าง — **จริงๆ merge แล้วทั้งคู่**
+> (PR #6, #7) ตาม top-block ของ `.ai_context/HANDOFF.md` เอง. service นี้ **code-complete** แล้ว งานที่เหลือเป็น
+> cross-repo (AccountZing consumer) หรือ deploy ops ไม่ใช่โค้ด. รวม **26 repos, coverage 75 → 76/156 (≈49%)**.
+> ก่อนหน้า: **AccountZing ครบ 6/6** (PR #33+#34) — repo ที่ 3 ที่ครบ ต่อจาก pos108-core + 108-platform-services.
+> ก่อนหน้านั้น: **`108-platform-services` ครบ 6/6** (PR #21) ต่อจาก CLAUDE #17 + HANDOFF #19. repo เดิม
 > (Identity-/Customer-/Loyalty-/Notification-/Secrets-Platform) **archived 2026-07-24** ตัดออกจาก matrix
 > พร้อม `customer-plat` (superseded). **`pos108-core` ยังเป็น repo แยก** (Wave-3 fold-in ถูก revert,
 > 108-platform-services #15).
@@ -56,9 +56,9 @@
 ## Priority follow-ups
 1. ✅ **AccountZing + Gateway DO_NOT_TOUCH**: merged 2026-06-18 (PR #14, #16) — ทั้งคู่มี D แล้ว, รายการนี้ปิด
 2. ✅ **AccountZing ครบ 6/6** (2026-07-25, PR #33+#34)
-3. ✅ **CLAUDE.md rollout เสร็จ** (2026-07-25) + **108-platform-services ครบ 6/6**. ถัดไป: HANDOFF.md ให้ tixtox-web/flutter + Payroll ที่ยังขาด
+3. ✅ **CLAUDE.md rollout เสร็จ** (2026-07-25) + **108-platform-services ครบ 6/6** + **Payroll HANDOFF เพิ่มแล้ว** (PR #12). ถัดไป: HANDOFF.md ให้ tixtox-web/flutter ที่ยังขาด
 4. 🟠 **MILESTONES.md** มีแค่ pos108-core + 108-platform-services + AccountZing — เติม repo ที่มี roadmap ชัด
-5. 🟢 **leaf apps** (pos108-orders, shop108, BipByte/apps/{web,flutter-app}, Payroll): ตัดสินใจชัดว่าจะลง HANDOFF อย่างเดียว หรือยกเว้น แล้วบันทึกใน templates/README.md
+5. 🟢 **leaf apps** (pos108-orders, shop108, BipByte/apps/{web,flutter-app}): ตัดสินใจชัดว่าจะลง HANDOFF อย่างเดียว หรือยกเว้น แล้วบันทึกใน templates/README.md
 
 ## วิธี refresh matrix
 รันบน Mac Studio (`ssh macstudio-ts` — ที่เก็บ checkouts ทั้งหมด): `git pull --ff-only` ต่อ repo แล้วเช็คไฟล์

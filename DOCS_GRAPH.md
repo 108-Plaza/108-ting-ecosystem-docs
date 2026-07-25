@@ -12,12 +12,15 @@
 
 ## Coverage at a glance
 
-- Overall control-doc coverage: **75 / 156 (≈48%)** across **26 repos** (9 platform groups + the
+- Overall control-doc coverage: **76 / 156 (≈49%)** across **26 repos** (9 platform groups + the
   `108-platform-services` monorepo).
 - Fully compliant (6/6): **`pos108-core`**, **`108-platform-services`** (ARCHITECTURE/MILESTONES/
-  DO_NOT_TOUCH/.ai_context completed in one PR, #21), and, as of 2026-07-25, **`AccountZing-Platform`**
-  (root `HANDOFF.md` added #34, on top of ARCHITECTURE + MILESTONES #33 and its pre-existing
+  DO_NOT_TOUCH/.ai_context completed in one PR, #21), and **`AccountZing-Platform`** (root
+  `HANDOFF.md` added #34, on top of ARCHITECTURE + MILESTONES #33 and its pre-existing
   finance-specific `docs/DO_NOT_TOUCH.md` + CLAUDE.md) — three fully-compliant repos.
+  `Payroll-Platform` added root `HANDOFF.md` (repo PR #12) → **3/6**; it's a sibling of
+  AccountZing (same extraction pattern) and is code-complete (5 slices + deploy artifacts merged),
+  remaining work is cross-repo/ops, not payroll code.
 - **CLAUDE.md rollout (2026-07-25):** CLAUDE.md was added to every repo that was missing it (the
   ecosystem `CLAUDE.template.md` resolved per repo — real build/test commands + guardrails), so
   **CLAUDE coverage jumped 8/26 → 24/26** — every repo now has one except the skipped `shop108`
@@ -72,7 +75,7 @@ graph TD
   BIP --> BIP6["apps/flutter-app · 2/6"]:::partial
 
   PS --> PS1["Media · 3/6"]:::partial
-  PS --> PS2["Payroll · 2/6"]:::partial
+  PS --> PS2["Payroll · 3/6"]:::partial
   PS --> PS3["platform-console · 1/6 (local-only, un-pushed)"]:::empty
 
   IOT --> IOT1["Smart-Farm · 4/6"]:::partial
@@ -113,7 +116,7 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
 | BipByte-Platform | apps/flutter-app | · | ✓ | · | · | · | ✓ | 2 |
 | 108-platform-services | (monorepo: identity/customer/loyalty/notify/secrets) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | **6** |
 | Platform-Services | Media | ✓ | ✓ | ✓ | · | · | · | 3 |
-| Platform-Services | Payroll | · | ✓ | · | · | · | ✓ | 2 |
+| Platform-Services | Payroll | ✓ | ✓ | · | · | · | ✓ | 3 |
 | Platform-Services | platform-console *(local-only, un-pushed)* | ✓ | · | · | · | · | · | 1 |
 | IoT-Platform | Smart-Farm | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
 | IoT-Platform | Smart-Home | ✓ | ✓ | · | · | · | ✓ | 3 |
@@ -122,7 +125,7 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
 | Data-Platform | (repo root) | ✓ | ✓ | · | · | · | · | 2 |
 | Creator-Platform | creator | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
 | Logistics-Platform | delivery | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
-| **per-doc total** | **(/26)** | **20** | **24** | **8** | **3** | **4** | **16** | **75** |
+| **per-doc total** | **(/26)** | **21** | **24** | **8** | **3** | **4** | **16** | **76** |
 
 ## Survey caveats (2026-07-25)
 
