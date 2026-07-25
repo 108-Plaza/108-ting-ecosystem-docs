@@ -12,15 +12,18 @@
 
 ## Coverage at a glance
 
-- Overall control-doc coverage: **72 / 156 (≈46%)** across **26 repos** (9 platform groups + the
+- Overall control-doc coverage: **74 / 156 (≈47%)** across **26 repos** (9 platform groups + the
   `108-platform-services` monorepo).
 - Fully compliant (6/6): **`pos108-core`** and, as of 2026-07-25, **`108-platform-services`** (its
   ARCHITECTURE/MILESTONES/DO_NOT_TOUCH/.ai_context were completed in one PR, #21).
+  **`AccountZing-Platform` is now 5/6** (only root `HANDOFF.md` missing — it has
+  `.ai_context/HANDOFF.md` instead), after adding ARCHITECTURE + MILESTONES (#33) on top of its
+  pre-existing finance-specific `docs/DO_NOT_TOUCH.md` (merged 2026-06-18) and CLAUDE.md.
 - **CLAUDE.md rollout (2026-07-25):** CLAUDE.md was added to every repo that was missing it (the
   ecosystem `CLAUDE.template.md` resolved per repo — real build/test commands + guardrails), so
   **CLAUDE coverage jumped 8/26 → 24/26** — every repo now has one except the skipped `shop108`
   (personal fork) and the local-only `platform-console`.
-- Weakest standards ecosystem-wide: **MILESTONES 2/26** · **DO_NOT_TOUCH 4/26** · **ARCHITECTURE 7/26**.
+- Weakest standards ecosystem-wide: **MILESTONES 3/26** · **DO_NOT_TOUCH 4/26** · **ARCHITECTURE 8/26**.
 - Strongest: **CLAUDE 24/26** · **HANDOFF 19/26** · **.ai_context 16/26**.
 - **Backend consolidation (2026-07):** `identity`, `customer`, `loyalty`, `notify`, `secrets` are now
   `services/*` in the **`108-platform-services` monorepo** (one repo, now **6/6** — HANDOFF #19 +
@@ -77,7 +80,7 @@ graph TD
   IOT --> IOT2["Smart-Home · 3/6"]:::partial
 
   PAY --> PAY1["Gateway · 4/6"]:::partial
-  AZ  --> AZ1["(repo root) · 3/6"]:::partial
+  AZ  --> AZ1["(repo root) · 5/6"]:::partial
   DP  --> DP1["(repo root) · 2/6"]:::partial
   CR  --> CR1["creator · 4/6"]:::partial
   LOG --> LOG1["delivery · 4/6"]:::partial
@@ -116,11 +119,11 @@ Legend: green = complete (6/6) · amber = partial · red = empty (0/6).
 | IoT-Platform | Smart-Farm | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
 | IoT-Platform | Smart-Home | ✓ | ✓ | · | · | · | ✓ | 3 |
 | Payment-Platform | Gateway | ✓ | ✓ | · | · | ✓ | ✓ | 4 |
-| AccountZing-Platform | (repo root) | · | ✓ | · | · | ✓ | ✓ | 3 |
+| AccountZing-Platform | (repo root) | · | ✓ | ✓ | ✓ | ✓ | ✓ | 5 |
 | Data-Platform | (repo root) | ✓ | ✓ | · | · | · | · | 2 |
 | Creator-Platform | creator | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
 | Logistics-Platform | delivery | ✓ | ✓ | ✓ | · | · | ✓ | 4 |
-| **per-doc total** | **(/26)** | **19** | **24** | **7** | **2** | **4** | **16** | **72** |
+| **per-doc total** | **(/26)** | **19** | **24** | **8** | **3** | **4** | **16** | **74** |
 
 ## Survey caveats (2026-07-25)
 
