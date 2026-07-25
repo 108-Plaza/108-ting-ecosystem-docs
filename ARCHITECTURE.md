@@ -37,7 +37,7 @@ graph TB
 
   CORE["pos108-core · 30810<br/>POS cloud API + control-plane<br/>separate repo · branch nodes = same binary"]:::core
 
-  subgraph BACKEND["108-backend monorepo — services/* + shared crates/* (one repo · one deploy pipeline)"]
+  subgraph BACKEND["108-platform-services monorepo — services/* + shared crates/* (one repo · one deploy pipeline)"]
     ID["identity · 30110<br/>EdDSA JWT · OTP · Google OAuth"]:::plat
     CUST["customer · 30114<br/>CRM registry · phone-first"]:::plat
     LOY["loyalty<br/>points · wallet · gift-card"]:::plat
@@ -85,18 +85,18 @@ graph TB
 Legend: blue = clients · purple = edge · amber = frontends · green = POS core ·
 olive = platform services · red = data. Solid arrow = synchronous call; dotted = async
 event (`sale.completed` → loyalty accrual, order-independent); plain line = same phone-key
-domain (customer ↔ loyalty). The boxed group is the **108-backend monorepo**: `identity`,
+domain (customer ↔ loyalty). The boxed group is the **108-platform-services monorepo**: `identity`,
 `customer`, `loyalty`, `notify`, `secrets` share one repo (path deps, one lockfile, one
 `deploy/staging` pipeline) — each still deploys as its own k3s service on the NodePort shown.
 Their old standalone repos (`Identity-/Customer-/Loyalty-/Notification-/Secrets-Platform`)
 were **archived 2026-07-24**. `pos108-core` stays a **separate repo** (a Wave-3 attempt to
-fold it in was reverted, 108-backend #15); `Media-Platform`, `Payment-Platform`,
+fold it in was reverted, 108-platform-services #15); `Media-Platform`, `Payment-Platform`,
 `AccountZing-Platform` and the BipByte stack are also separate repos.
 
-## Backend consolidation — 108-backend monorepo (2026-07)
+## Backend consolidation — 108-platform-services monorepo (2026-07)
 
 The central 108 Rust platform services have been consolidating into one private monorepo,
-**`108-Plaza/108-backend`** (workspace `Cargo.toml` + shared `crates/*` + per-service
+**`108-Plaza/108-platform-services`** (workspace `Cargo.toml` + shared `crates/*` + per-service
 `services/*`, path deps + one lockfile). As of **2026-07-25** it holds
 `services/{identity, customer, loyalty, notify, secrets}` (5 services). Deploys come from the
 monorepo (`git push origin main:deploy/staging` → path-filtered per-service image build →
@@ -106,7 +106,7 @@ Deployment on its own NodePort (the `ting-service` chart, container name `ting-s
 The old standalone repos were **archived** as they migrated (read-only — do not push):
 `Identity-Platform`, `Customer-Platform`, `Loyalty-Platform`, `Notification-Platform`,
 `Secrets-Platform` (all 2026-07-24). **`pos108-core` stays a separate repo** — a Wave-3
-attempt to fold it into the monorepo was **reverted** (108-backend #15, 2026-07-25). Also
+attempt to fold it into the monorepo was **reverted** (108-platform-services #15, 2026-07-25). Also
 separate: `Payment-Platform`, `AccountZing-Platform`, `Media-Platform`, the BipByte/tixtox
 stack, and all frontends.
 
@@ -119,11 +119,11 @@ now ships from.
 | Platform / service | Repo | Role | Live state |
 |-----------------|------|------|-----------|
 | **pos108-core** | `pos108-core` (separate) | POS cloud API + control-plane (one binary; branch nodes run the same binary in branch mode) — NOT in the monorepo (Wave-3 fold-in reverted) | k3s staging NodePort `30810` |
-| **identity** | `108-backend` (`services/identity`) | central auth (EdDSA JWTs; OTP passwordless; Google OAuth via env vars) — `Identity-Platform` archived | LIVE `id.108plaza.net`, NodePort `30110` |
-| **customer** | `108-backend` (`services/customer`) | central customer/CRM registry (phone-first; Customer = identity, Loyalty = points) — `Customer-Platform` archived | LIVE k3s staging NodePort `30114` |
-| **loyalty** | `108-backend` (`services/loyalty`) | central loyalty: points / wallet / gift-card, phone-keyed — `Loyalty-Platform` archived | k3s staging; loyalty features go HERE, not pos108 |
-| **notify** | `108-backend` (`services/notify`) | email + OTP delivery (Postfix SMTP; transactional email wired into sell; `POST /api/v1/otp` for identity) — `Notification-Platform` archived | LIVE k3s staging NodePort `30710` |
-| **secrets** | `108-backend` (`services/secrets`) | TRUE-E2EE vault (ECDH P-256 + AES-GCM; ciphertext only; auth = identity JWT `aud=secrets`); console on NodePort `30914` — `Secrets-Platform` archived | LIVE k3s staging NodePort `30913` |
+| **identity** | `108-platform-services` (`services/identity`) | central auth (EdDSA JWTs; OTP passwordless; Google OAuth via env vars) — `Identity-Platform` archived | LIVE `id.108plaza.net`, NodePort `30110` |
+| **customer** | `108-platform-services` (`services/customer`) | central customer/CRM registry (phone-first; Customer = identity, Loyalty = points) — `Customer-Platform` archived | LIVE k3s staging NodePort `30114` |
+| **loyalty** | `108-platform-services` (`services/loyalty`) | central loyalty: points / wallet / gift-card, phone-keyed — `Loyalty-Platform` archived | k3s staging; loyalty features go HERE, not pos108 |
+| **notify** | `108-platform-services` (`services/notify`) | email + OTP delivery (Postfix SMTP; transactional email wired into sell; `POST /api/v1/otp` for identity) — `Notification-Platform` archived | LIVE k3s staging NodePort `30710` |
+| **secrets** | `108-platform-services` (`services/secrets`) | TRUE-E2EE vault (ECDH P-256 + AES-GCM; ciphertext only; auth = identity JWT `aud=secrets`); console on NodePort `30914` — `Secrets-Platform` archived | LIVE k3s staging NodePort `30913` |
 | **pos108-terminal** | `pos108-terminal` | Rust/Slint POS terminal — the ACTIVE POS front-end (i18n, self-update, Mac/Win/Linux bundles) | shipped to customer devices |
 | **pos108-admin** | `pos108-admin` | Next.js back-office for tenants | k3s staging (`admin.staging.108plaza.net`) |
 | **pos108-orders** | `pos108-orders` | table-QR / walk-in public ordering front-end | k3s staging |
