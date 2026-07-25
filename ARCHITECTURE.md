@@ -35,21 +35,20 @@ graph TB
     SELL["pos108-sell · 30820 (prod)<br/>108plaza.com + operator console"]:::fe
   end
 
-  CORE["pos108-core · 30810<br/>POS cloud API + control-plane<br/>branch nodes = same binary, branch mode"]:::core
+  CORE["pos108-core · 30810<br/>POS cloud API + control-plane<br/>separate repo · branch nodes = same binary"]:::core
 
-  subgraph PLAT["Central platforms"]
-    direction LR
-    ID["Identity · 30110<br/>EdDSA JWT · OTP · Google OAuth"]:::plat
-    CUST["Customer · 30114<br/>CRM registry · phone-first"]:::plat
-    LOY["Loyalty<br/>points · wallet · gift-card"]:::plat
-    NOTIF["Notification · 30710<br/>email + OTP · Postfix SMTP"]:::plat
-    SEC["Secrets · 30913<br/>TRUE-E2EE vault"]:::plat
-    MEDIA["Media<br/>uploads · CDN · live"]:::plat
-    PAY["Payment · 30210<br/>SCB QR · 2C2P · multi-bank"]:::plat
+  subgraph BACKEND["108-backend monorepo — services/* + shared crates/* (one repo · one deploy pipeline)"]
+    ID["identity · 30110<br/>EdDSA JWT · OTP · Google OAuth"]:::plat
+    CUST["customer · 30114<br/>CRM registry · phone-first"]:::plat
+    LOY["loyalty<br/>points · wallet · gift-card"]:::plat
+    NOTIF["notify · 30710<br/>email + OTP · Postfix SMTP"]:::plat
+    SEC["secrets · 30913<br/>TRUE-E2EE vault"]:::plat
   end
 
-  AZ["AccountZing<br/>double-entry GL · ClusterIP (internal)"]:::plat
-  BIP["BipByte / 108Zing · 30910<br/>57-service Rust stack · ns tixtox"]:::plat
+  MEDIA["Media-Platform<br/>uploads · CDN · live (separate repo)"]:::plat
+  PAY["Payment-Platform · 30210<br/>SCB QR · 2C2P · multi-bank (separate repo)"]:::plat
+  AZ["AccountZing-Platform<br/>double-entry GL · ClusterIP (separate repo)"]:::plat
+  BIP["BipByte / 108Zing · 30910<br/>57-service Rust stack · ns tixtox (separate repo)"]:::plat
 
   PG["pg-central + redis-central (staging)<br/>Mac mini .68 · PG16 + Redis (prod)"]:::data
 
@@ -84,32 +83,56 @@ graph TB
 ```
 
 Legend: blue = clients · purple = edge · amber = frontends · green = POS core ·
-olive = central platforms · red = data. Solid arrow = synchronous call; dotted = async
-event (`sale.completed` → Loyalty accrual, order-independent); plain line = same phone-key
-domain (Customer ↔ Loyalty).
+olive = platform services · red = data. Solid arrow = synchronous call; dotted = async
+event (`sale.completed` → loyalty accrual, order-independent); plain line = same phone-key
+domain (customer ↔ loyalty). The boxed group is the **108-backend monorepo**: `identity`,
+`customer`, `loyalty`, `notify`, `secrets` share one repo (path deps, one lockfile, one
+`deploy/staging` pipeline) — each still deploys as its own k3s service on the NodePort shown.
+Their old standalone repos (`Identity-/Customer-/Loyalty-/Notification-/Secrets-Platform`)
+were **archived 2026-07-24**. `pos108-core` stays a **separate repo** (a Wave-3 attempt to
+fold it in was reverted, 108-backend #15); `Media-Platform`, `Payment-Platform`,
+`AccountZing-Platform` and the BipByte stack are also separate repos.
 
-## Live Platform Map (as of 2026-07-24)
+## Backend consolidation — 108-backend monorepo (2026-07)
+
+The central 108 Rust platform services have been consolidating into one private monorepo,
+**`108-Plaza/108-backend`** (workspace `Cargo.toml` + shared `crates/*` + per-service
+`services/*`, path deps + one lockfile). As of **2026-07-25** it holds
+`services/{identity, customer, loyalty, notify, secrets}` (5 services). Deploys come from the
+monorepo (`git push origin main:deploy/staging` → path-filtered per-service image build →
+`kubectl set image` only for changed services); each service still runs as its own k3s
+Deployment on its own NodePort (the `ting-service` chart, container name `ting-service`).
+
+The old standalone repos were **archived** as they migrated (read-only — do not push):
+`Identity-Platform`, `Customer-Platform`, `Loyalty-Platform`, `Notification-Platform`,
+`Secrets-Platform` (all 2026-07-24). **`pos108-core` stays a separate repo** — a Wave-3
+attempt to fold it into the monorepo was **reverted** (108-backend #15, 2026-07-25). Also
+separate: `Payment-Platform`, `AccountZing-Platform`, `Media-Platform`, the BipByte/tixtox
+stack, and all frontends.
+
+## Live Platform Map (as of 2026-07-25)
 
 All k3s services run on the single Dell node fronted by host nginx (see
-[`DEPLOYMENT_ALLOCATION.md`](DEPLOYMENT_ALLOCATION.md)).
+[`DEPLOYMENT_ALLOCATION.md`](DEPLOYMENT_ALLOCATION.md)). "Repo" = the git repo the service
+now ships from.
 
-| Platform / repo | Role | Live state |
-|-----------------|------|-----------|
-| **pos108-core** | POS cloud API + control-plane (one binary; branch nodes run the same binary in branch mode) | k3s staging NodePort `30810` |
-| **pos108-terminal** | Rust/Slint POS terminal — the ACTIVE POS front-end (i18n, self-update, Mac/Win/Linux bundles) | shipped to customer devices |
-| **pos108-admin** | Next.js back-office for tenants | k3s staging (`admin.staging.108plaza.net`) |
-| **pos108-orders** | table-QR / walk-in public ordering front-end | k3s staging |
-| **pos108-store** | "108 Online" storefront SPA | LIVE `shop.108plaza.com`, NodePort `30830`; BFF staff token retired 2026-07-24 |
-| **pos108-sell** | 108plaza.com marketing/sales site + operator console `admin.108plaza.com` | LIVE on k3s **prod** NodePort `30820` (pm2 retired 2026-07-22) |
-| **Identity-Platform** | central auth (EdDSA JWTs; OTP passwordless; Google OAuth via env vars) | LIVE `id.108plaza.net`, NodePort `30110` |
-| **Customer-Platform** | central customer/CRM registry (phone-first; split from Loyalty: Customer = identity, Loyalty = points) | LIVE k3s staging NodePort `30114` |
-| **Loyalty-Platform** | central loyalty: points / wallet / gift-card, phone-keyed | repo active; loyalty features go HERE, not pos108 |
-| **Notification-Platform** | email + OTP delivery (Postfix SMTP; transactional email wired into sell; `POST /api/v1/otp` for Identity) | LIVE k3s staging NodePort `30710` |
-| **Secrets-Platform** | our own TRUE-E2EE secrets vault (ECDH P-256 + AES-GCM; vault stores ciphertext only; auth = Identity JWT `aud=secrets`) | LIVE k3s staging NodePort `30913` |
-| **Media-Platform** | shared media services | see platform docs |
-| **Payment-Platform** | payment gateway (SCB QR, 2C2P, multi-bank providers) | see platform docs |
-| **AccountZing-Platform** | central accounting ledger (double-entry GL) for POS108 + 108-Zing | standalone repo, internal (ClusterIP, no host) |
-| **BipByte-Platform** | 108Zing social-commerce stack (57 Rust services, ns `tixtox`) | api-gateway on k3s NodePort `30910` |
+| Platform / service | Repo | Role | Live state |
+|-----------------|------|------|-----------|
+| **pos108-core** | `pos108-core` (separate) | POS cloud API + control-plane (one binary; branch nodes run the same binary in branch mode) — NOT in the monorepo (Wave-3 fold-in reverted) | k3s staging NodePort `30810` |
+| **identity** | `108-backend` (`services/identity`) | central auth (EdDSA JWTs; OTP passwordless; Google OAuth via env vars) — `Identity-Platform` archived | LIVE `id.108plaza.net`, NodePort `30110` |
+| **customer** | `108-backend` (`services/customer`) | central customer/CRM registry (phone-first; Customer = identity, Loyalty = points) — `Customer-Platform` archived | LIVE k3s staging NodePort `30114` |
+| **loyalty** | `108-backend` (`services/loyalty`) | central loyalty: points / wallet / gift-card, phone-keyed — `Loyalty-Platform` archived | k3s staging; loyalty features go HERE, not pos108 |
+| **notify** | `108-backend` (`services/notify`) | email + OTP delivery (Postfix SMTP; transactional email wired into sell; `POST /api/v1/otp` for identity) — `Notification-Platform` archived | LIVE k3s staging NodePort `30710` |
+| **secrets** | `108-backend` (`services/secrets`) | TRUE-E2EE vault (ECDH P-256 + AES-GCM; ciphertext only; auth = identity JWT `aud=secrets`); console on NodePort `30914` — `Secrets-Platform` archived | LIVE k3s staging NodePort `30913` |
+| **pos108-terminal** | `pos108-terminal` | Rust/Slint POS terminal — the ACTIVE POS front-end (i18n, self-update, Mac/Win/Linux bundles) | shipped to customer devices |
+| **pos108-admin** | `pos108-admin` | Next.js back-office for tenants | k3s staging (`admin.staging.108plaza.net`) |
+| **pos108-orders** | `pos108-orders` | table-QR / walk-in public ordering front-end | k3s staging |
+| **pos108-store** | `pos108-store` | "108 Online" storefront SPA | LIVE `shop.108plaza.com`, NodePort `30830`; BFF staff token retired 2026-07-24 |
+| **pos108-sell** | `pos108-sell` | 108plaza.com marketing/sales site + operator console `admin.108plaza.com` | LIVE on k3s **prod** NodePort `30820` (pm2 retired 2026-07-22) |
+| **Media-Platform** | `Media-Platform` | shared media services | see platform docs |
+| **Payment-Platform** | `Payment-Platform` | payment gateway (SCB QR, 2C2P, multi-bank providers) | see platform docs |
+| **AccountZing-Platform** | `AccountZing-Platform` | central accounting ledger (double-entry GL) for POS108 + 108-Zing | standalone repo, internal (ClusterIP, no host) |
+| **BipByte-Platform** | `tixtox-*` repos | 108Zing social-commerce stack (57 Rust services, ns `tixtox`) | api-gateway on k3s NodePort `30910` |
 
 ### Repo naming (renamed 2026-07-03 — old names are stale)
 - `pos108` → **pos108-core** · `pos-rs` → **pos108-terminal** · `shoping-online` → **pos108-store**
