@@ -139,11 +139,46 @@ measuring them**. `cargo-machete`, `cargo-udeps`, `jscpd` and `tokei` were not
 installed anywhere in the fleet, so neither a claim that the code is clean nor a
 claim that it is junk had any evidence behind it.
 
+**The gate runs where the code is written, and CI is the floor.** This was got
+wrong on the first attempt and is worth stating as part of the rule: the gate was
+built as a CI job on the shared runner fleet, and its output was a comment on the
+PR. But development happens on the author's machine and is pushed once finished,
+so that comment arrives after the moment it could have changed anything, on a
+server nobody is watching. A review nobody reads is not a control either.
+
+So: the primary surface is a **pre-push hook on the author's machine**, printing
+to the terminal of whoever wrote the code, before it leaves the machine
+(`scripts/hygiene/install-hooks.sh`, once per clone). The identical checks stay in
+CI as the backstop, because git hooks are not versioned and a clone without the
+hook is the normal case, not a violation. Neither replaces the other: local is
+where it gets read, CI is where it cannot be skipped.
+
+**Two layers, and only one of them may block.** Everything decidable by a rule is
+checked by a rule — same input, same verdict, every run, for free — and that layer
+fails the build. What a rule cannot decide (is this abstraction wrong, does this
+comment still describe the code, is this the same logic under another name) is
+reviewed by a model, which **advises and never blocks**. An LLM is not
+reproducible: the same diff can come back different on a re-run, and a gate that
+answers differently each time is not a gate.
+
+The advisory layer is not decoration. Run against the gate's own first
+implementation it found six real defects in it, including a brace walker that
+miscounted inside string literals and so *under-reported* the number the
+deterministic layer blocks on — a false clean, which is the one failure mode a
+ratchet cannot survive.
+
+Both layers must also be honest about their own reach. A checker that crashes must
+not report zero findings, and a claim that "the gate already covers X" must match
+what the code actually covers, or the advisory layer is told to stay quiet about a
+hole that is really there.
+
 Required gates, in CI, on every PR:
 
 - `cargo clippy --all-targets -- -D warnings` — already in place; keep it hard.
 - **Unused dependencies** (`cargo-machete`) — an agent adding a crate it ends up
-  not using is invisible to clippy.
+  not using is invisible to clippy. Not yet installed on the fleet, so as of
+  2026-07-30 this one is reported as skipped rather than enforced; a check that is
+  absent must say so rather than pass silently.
 - **Duplication** (`jscpd`) — rule 2 says the compiler cannot see copies; this is
   what sees them.
 - **Comment-only modules** — a module that declares nothing but promises
