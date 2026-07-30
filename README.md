@@ -3,3 +3,16 @@
 Ecosystem-level design, decision, deployment, and readiness docs for the
 108 Ting Ecosystem. Private — contains internal infra topology, payment/identity
 contracts, and active-work status.
+
+## Standards
+
+- [`ENGINEERING_STANDARD_AI_AUTHORED.md`](ENGINEERING_STANDARD_AI_AUTHORED.md) —
+  how we structure and gate code now that agents write it and at most two people
+  supervise. Seven rules, each with the incident that produced it, plus the
+  measured quality baseline for `pos108-core`.
+- [`DEPLOYMENT_STANDARD_K3S.md`](DEPLOYMENT_STANDARD_K3S.md) — k3s deployment standard.
+- [`PRODUCTION_READINESS_BAR.md`](PRODUCTION_READINESS_BAR.md) — what "ready" means.
+
+> Note: several docs here link to `ENGINEERING_CONSTITUTION.md`, which has never
+> existed in this repo or anywhere in the org — a dangling reference, not a moved
+> file. Either write it or repoint those links.
