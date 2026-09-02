@@ -1,15 +1,27 @@
 # 108 Ting Ecosystem Active Work
 
 ## Active Work Area
-~/108-POS/core
+~/108-ecosystem/jh/ — the jobs + heros family: `jh-api-dev` (one API serving both), `108jobs-flutter-dev`, `108jobs-web-dev`, `108heros-flutter-dev`, `108heros-web-dev`.
+(The ~/108-POS/core entry that stood here since 2026-07-24 is retained below as history.)
 
 ## Active Goal
-POS108 service separation / POS108 API stabilization.
+Ride fares and dispatch on the heros side; the jobs/heros product split (repos separated on GitHub 2026-09-02, API still shared).
 
 ## Active Sub-Project Handoff
-~/108-POS/core/.ai_context/ (tracked control system; start with README.md → CONTROL_TOWER.md)
+Per repo: `CLAUDE.md` (canonical control doc; `AGENTS.md` is a symlink so Codex reads the same) and `.ai_context/` where present. Machine layout and conventions: `~/108-ecosystem/CLAUDE.md`.
 
-## Ecosystem Rollup — as of 2026-07-24
+## Ecosystem Rollup — as of 2026-09-02 (repo + local facts only; production topology NOT re-verified this pass)
+Supersedes the 2026-07-24 rollup below for the facts listed here; everything else there stands as history.
+
+- **jobs and heros are separate products on GitHub.** `108jobs-flutter-dev` created 2026-09-02, `108heros-web-dev` 2026-08-27 (mirror of `108-Plaza/108heros-web`). `jh-api-dev` — renamed from `api-108heros-dev` — still serves both sides.
+- **Renames that redirect silently:** `api-108heros-dev → jh-api-dev`, `pos108-dev → pos108-core-dev`, `message-platform-dev → Livechat-Platform-dev`. `gh repo view` follows them; a checkout's remote URL does not tell you.
+- **pictrs is retired** (2026-09-01, jh-api-dev #341): container, volumes and compose entry removed; MAD (`mad108-*`) is the media service.
+- **Owner decisions open on ride money:** whether a quote is a *ceiling* on the metered fare (jh-api-dev #298, proposal in PR #330 — not a ruling) and whether the 2026-08-27 "no deposit" ruling also bars coin payment at completion (#340). The platform's historical float still sits in an admin's personal wallet pending reconciliation (#339).
+- **CI on the jh-api-dev mirror runs only on `_bsync` bridge commits**; feature merges land ungated. Two formatting breakages reached main that way in one hour on 2026-09-01.
+- **Security:** `108jobs-flutter-dev` still ships `.env` (with `GOOGLE_ROUTES_API_KEY`) as a bundled asset — the bug heros fixed as #80. Filed as 108jobs-flutter-dev #1; port `1e3df913` and rotate the key.
+- **Local layout standardised** (`~/108-ecosystem/`): directory name = GitHub repo name; `jh/` holds the jobs+heros family; platforms at the root; worktrees under `.wt/`. `~/108-ecosystem/CLAUDE.md` documents it for both Claude and Codex.
+
+## Ecosystem Rollup — as of 2026-07-24 (historical)
 State of the ecosystem as of 2026-07-24. Supersedes the 2026-07-09 rollup below for live-state
 facts (the older sections are kept as history). PR numbers are the source of truth.
 

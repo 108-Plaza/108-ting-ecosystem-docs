@@ -25,6 +25,7 @@
   ecosystem `CLAUDE.template.md` resolved per repo — real build/test commands + guardrails), so
   **CLAUDE coverage jumped 8/26 → 24/26** — every repo now has one except the skipped `shop108`
   (personal fork) and the local-only `platform-console`.
+- **AGENTS.md (2026-09-02):** each repo gets `AGENTS.md` as a symlink to `CLAUDE.md`, so Codex / ChatGPT reads the same control doc Claude does. Symlink, not rename — the 6-document standard keeps naming CLAUDE.md. Started with jh-api-dev, 108heros-flutter-dev and this repo.
 - Weakest standards ecosystem-wide: **MILESTONES 3/26** · **DO_NOT_TOUCH 4/26** · **ARCHITECTURE 8/26**.
 - Strongest: **CLAUDE 24/26** · **HANDOFF 20/26** · **.ai_context 16/26**.
 - **Backend consolidation (2026-07):** `identity`, `customer`, `loyalty`, `notify`, `secrets` are now
