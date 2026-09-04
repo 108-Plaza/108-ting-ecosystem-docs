@@ -49,7 +49,8 @@
   Max port `319XX = 31999 < 32767` ✓. NodePorts bind `0.0.0.0` → firewall so only
   local nginx reaches them.
 - **Databases:** staging = in-cluster (`pg-central`/`redis-central` in ns `staging`);
-  prod = Mac mini `.68` (external, via Endpoints).
+  prod = Dell host Docker containers on CNI gateway `10.42.0.1:<port>`
+  (`pos108-postgres-cloud-1` on `:5433`, `108jobs-postgres` on `:5434`; supersedes Mac mini `.68`).
 
 ---
 
@@ -57,8 +58,8 @@
 
 | Role | IP | Runs |
 |------|-----|------|
-| **Dell tower** (`ibrowe`) | **`103.27.202.40`** (public) | K3s single node (ns `prod`+`staging`) · host **nginx** edge (`:80/:443`, certbot) · BIND (`ns1`/`ns2.108jobs.com`) · existing legacy services |
-| **Mac mini** (`.68`) | `<MACMINI_LAN_IP>` (LAN) | **prod** Postgres@16 + Redis (external, NOT a K3s node) |
+| **Dell tower** (`ibrowe`) | **`103.27.202.40`** (public)<br>`10.42.0.1` (CNI Gateway) | K3s single node (ns `prod`+`staging`) · host **nginx** edge (`:80/:443`, certbot) · BIND (`ns1`/`ns2.108jobs.com`) · **prod DB containers** (`pos108-postgres-cloud-1` on `:5433`, `108jobs-postgres` on `:5434`) · existing legacy services |
+| **Mac mini** (`.68`) | `<MACMINI_LAN_IP>` (LAN) | (Retired / Unreachable from `.76`) Former prod DB host; prod DB migrated to Dell host Docker containers on `10.42.0.1` |
 | K3s pod / svc CIDR | `10.42.0.0/16` / `10.43.0.0/16` | in-cluster only |
 
 DNS: `*.staging.108plaza.net` + `*` (`= *.108plaza.net`) → **`103.27.202.40`**. Everything
@@ -140,7 +141,7 @@ AccountZing is ClusterIP-only (`accountzing.staging.svc` — no host, money ledg
 ## 4. Hostname → backend — PRODUCTION (`*.108plaza.net` → 103.27.202.40)
 
 Same slugs **without** `.staging`; **prod** NodePorts (swap `30`→`31`: pos108 `31810`,
-admin `31310`, …); DB on Mac mini `.68`. `api.108plaza.net` currently → legacy `:18000`
+admin `31310`, …); DB on Dell host Docker container (`10.42.0.1:5433`; supersedes Mac mini `.68`). `api.108plaza.net` currently → legacy `:18000`
 — cut over to K3s prod pos108 (`31810`) when prod is promoted (coordinate, it's live).
 
 ---
@@ -189,7 +190,7 @@ server {
 - **Next (staging):** pos108-pos (`30311`) + orders (`30312`) + slot (`30313`)
   frontends (same recipe, same-origin /api). Identity (`30110`) + Payment (`30210`).
   AccountZing = build Dockerfile first, stays ClusterIP.
-- **Prod:** promote the staging set into ns `prod` (`31xxx` ports, `.68` DB) once stable.
+- **Prod:** promote the staging set into ns `prod` (`31xxx` ports, Dell host DB via `10.42.0.1`) once stable.
 
 > ⚠️ **NetworkPolicy gotcha:** the staging `allow-ingress-traefik-and-intra` rule must
 > allow intra-namespace on ALL ports (2 rules), not just 8080 — else app→postgres:5432
