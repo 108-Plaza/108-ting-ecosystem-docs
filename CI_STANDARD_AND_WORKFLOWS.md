@@ -193,6 +193,7 @@ jobs:
 ### 3.4. `img2img-retouch`
 - **ลักษณะ:** Image retouching service (Python)
 - **ไฟล์เป้าหมาย:** `.github/workflows/ci.yml`
+- **สถานะเทสต์:** repo นี้ยังไม่มีเทสต์ ณ วันที่เขียน (16 `.py` / 0 `test_*.py` · ไม่มีไดเรกทอรี `tests/`) — ด่านนี้จึงมีแค่ lint (`ruff`) · การเพิ่มจ็อบ test ต้องมาพร้อมเทสต์ตัวแรก
 
 ```yaml
 name: ci
@@ -208,8 +209,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-and-test:
-    name: "ruff · pytest"
+  lint:
+    name: "ruff"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -220,14 +221,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff pytest
+          pip install ruff
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Lint with ruff
         run: ruff check .
-      - name: Test with pytest
-        # exit code 5 = "no tests collected" — treat as pass until the repo has tests,
-        # so the gate goes red for real failures only
-        run: pytest || [ $? -eq 5 ]
 ```
 
 ---
@@ -235,6 +232,7 @@ jobs:
 ### 3.5. `thai-names`
 - **ลักษณะ:** Thai name generation and transliteration (Rust & Python)
 - **ไฟล์เป้าหมาย:** `.github/workflows/ci.yml`
+- **สถานะเทสต์:** repo นี้ยังไม่มีเทสต์ฝั่ง Python ณ วันที่เขียน (1 `.py` / 0 `test_*.py` · ไม่มีไดเรกทอรี `tests/`) — ด่านนี้จึงมีแค่ `rust-test` (`cargo test`) · การเพิ่มจ็อบ test ฝั่ง Python ต้องมาพร้อมเทสต์ตัวแรก
 
 ```yaml
 name: ci
@@ -259,23 +257,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Test
         run: cargo test --all-targets
-
-  python-test:
-    name: "pytest"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Test
-        run: |
-          pip install pytest
-          if [ -d tests ] || find . -maxdepth 2 -name 'test_*.py' | grep -q .; then
-            pytest
-          else
-            echo "no python tests found — skipping"
-          fi
 ```
 
 ---
