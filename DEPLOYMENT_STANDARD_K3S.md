@@ -39,11 +39,11 @@
 |---|----------|-------|
 | **D1** | Cluster topology | **One K3s cluster, two environment namespaces** (`prod` / `staging`). No separate staging cluster. |
 | **D2** | Cluster node | **Single node** — the **Dell R645 (Linux)** as combined master+worker, running **both** `prod` and `staging` namespaces. Chosen for the most stable network/port config on one Linux OS. |
-| **D3** | Mac mini `.68` | **Stays OUT of the K3s cluster.** Runs external databases / legacy systems only — not joined as a node (keeps cluster networking simple). |
+| **D3** | Mac mini `.68` | **Retired / decommissioned from prod DB.** Stays OUT of the K3s cluster. (Superseded: prod databases migrated to Docker containers on the Dell host binding `10.42.0.1:<port>` CNI gateway; `.68` is no longer used for prod DB). |
 | **D4** | Cluster scope | K3s hosts **central/cloud services only.** Offline-first POS **branch** nodes and **IoT edge** gateways deploy **at-site**, outside the cluster. |
 
 **Derived from the locks (rationale in the sections noted):**
-- **D5** — Stateful data is external to the cluster: **prod** databases live on the Mac mini `.68` (existing `postgres@16` + Redis); **staging** databases run **in-cluster** as small StatefulSets so staging is self-contained and disposable. (§7)
+- **D5** — Stateful data policy: **prod** databases run directly on the **Dell host** as standalone Docker containers bound to the CNI gateway IP `10.42.0.1:<port>` (`108jobs-postgres` on `:5434` for jh-api, `pos108-postgres-cloud-1` on `:5433` for pos108 cloud), allowing K3s pods to reach prod DB directly without leaving the host or crossing external LAN; **staging** databases run **in-cluster** as small StatefulSets so staging is self-contained and disposable. (Mac mini `.68` is retired from prod state). (§7)
 - **D6** — Single TLS edge: the Dell's **existing system nginx** (certbot) holds `:80/:443`; K3s services are **NodePort** and nginx reverse-proxies each hostname → `127.0.0.1:<nodePort>`. (Originally planned as K3s Traefik owning the ports — superseded; see the banner above + §9.)
 
 ---
@@ -53,13 +53,15 @@
 A single beefy Linux node (Dell R645) runs one K3s cluster. Inside it, two
 namespaces — `prod` and `staging` — hold the same set of **stateless** central
 services, isolated by NetworkPolicy + ResourceQuota and addressed by distinct
-hostnames. **State lives outside the cluster**: production databases on the Mac
-mini `.68` (reached over the LAN), staging databases as throwaway in-cluster
-StatefulSets. **Offline-first POS** branch terminals and **IoT edge** gateways are
-deliberately *not* in the cluster — they run next to the hardware / the cash
-drawer and survive a WAN outage. The cluster is therefore the **central plane**
-(auth, the POS cloud aggregator, the async consumers, analytics, public product
-backends), never the edge.
+hostnames. **State lives outside the K3s cluster**: production databases run on
+the Dell host itself as standalone Docker containers bound to the K3s CNI gateway IP
+`10.42.0.1:<port>` (`108jobs-postgres` on `:5434` for jh-api, `pos108-postgres-cloud-1`
+on `:5433` for pos108 cloud — superseding the earlier Mac mini `.68` placement),
+and staging databases run as throwaway in-cluster StatefulSets. **Offline-first POS**
+branch terminals and **IoT edge** gateways are deliberately *not* in the cluster —
+they run next to the hardware / the cash drawer and survive a WAN outage. The cluster
+is therefore the **central plane** (auth, the POS cloud aggregator, the async consumers,
+analytics, public product backends), never the edge.
 
 ```
                           ┌──────────────────────────────────────────────────────┐
@@ -81,11 +83,13 @@ backends), never the edge.
                           │  infra ns: kube-system(Traefik) · cert-manager ·        │
                           │            sealed-secrets · monitoring                  │
                           └───────────────┬────────────────────────────────────────┘
-                                          │ LAN (prod DB connections only)
-                          ┌───────────────┴───────────────┐
-                          │  Mac mini .68 (NOT a K3s node) │
-                          │  postgres@16 · Redis · legacy  │   ← prod state lives here
-                          └────────────────────────────────┘
+                                          │ CNI Gateway (10.42.0.1)
+                          ┌───────────────┴────────────────────────────────────────┐
+                          │  Dell Host Docker Containers (Prod State)              │
+                          │  • 108jobs-postgres:17        10.42.0.1:5434           │
+                          │  • pos108-postgres-cloud-1    10.42.0.1:5433           │
+                          │  (Mac mini .68 is retired / decommissioned from prod)  │
+                          └────────────────────────────────────────────────────────┘
 
    ── OUTSIDE the cluster (deploy at-site, offline-capable) ─────────────────────
      POS branch terminals (pos108 APP_ENVIRONMENT=branch)  →  each store
@@ -100,7 +104,7 @@ backends), never the edge.
 
 | Namespace | Purpose | Hostnames | DB source |
 |-----------|---------|-----------|-----------|
-| `prod` | Production central plane | `<svc>.108plaza.net` (§10) | Mac mini `.68` (external) |
+| `prod` | Production central plane | `<svc>.108plaza.net` (§10) | Dell Docker container on CNI gateway `10.42.0.1:<port>` (supersedes `.68`) |
 | `staging` | Pre-prod / integration | `<svc>.staging.108plaza.net` (§10) | in-cluster StatefulSets |
 
 **Shared platform namespaces** (standard infra, not "the two app namespaces"):
@@ -130,10 +134,10 @@ an immutable tag for reproducible rollbacks).
 | **CI → deploy** | Advance `deploy/staging` → image-build CI publishes the tag → `helm upgrade --install` to that tag | Image build is **branch-triggered** (`deploy/staging`), not per-merge-to-`main` (§4a). The `helm upgrade` step is still a separate, owner-gated action today; **Argo CD / Flux** is the Phase-2 pull-based-GitOps upgrade once >~3 services are live. |
 | **Observability** | **Prometheus + Grafana** in `monitoring` ns | Scrape `/metrics` (pos108 `#310`, Notification, Payment, Data already expose it). Alerting: outbox backlog, dead-letter, consumer lag, ledger imbalance. |
 | **Message broker** | **NATS** per workload namespace (Deployment/StatefulSet) | Notification needs it; replaces the compose `infra.yml` NATS. |
-| **DNS to external DB** | `ExternalName` Service / `Endpoints` object in `prod` → Mac mini `.68` | Manifests reference a stable in-cluster name (e.g. `pg-central.prod.svc`) instead of a raw IP. |
+| **Connectivity to prod DB** | Direct to Dell CNI Gateway (`10.42.0.1:<port>`) | Prod DB containers on Dell host bind to CNI gateway `10.42.0.1`; pods connect directly over CNI (no external hops or cluster Endpoints). Supersedes the planned `ExternalName`/`Endpoints` pointing to `.68`. |
 
 **HA reality (state honestly):** one node = **no control-plane HA**, and prod
-state on one Mac mini = single box too. Resilience here is **backup/restore +
+state in Dell host Docker containers = single box too. Resilience here is **backup/restore +
 fast redeploy**, not live failover. Acceptable for current scale; revisit
 (add a 2nd K3s node / managed PG) when uptime SLA demands it.
 
@@ -216,8 +220,8 @@ Legend — **IaC**: ✅ ready · 🟡 partial (Dockerfile/compose, needs k8s/Hel
 | **pos108 branch terminals** | At each store (`APP_ENVIRONMENT=branch`: push/pull/heartbeat/resolver) | **Offline-first, owner-locked.** Must keep selling during a WAN outage; talks to the cloud node via `APP_SYNC__CLOUD_BASE_URL` + `APP_SYNC__BRANCH_API_KEY`. Deploy: single binary / compose at-site. |
 | **IoT edge — Smart-Farm gateway** | At each farm | Drives real pumps/valves; must run next to hardware and survive network loss. (Its *cloud backend* portion may join K3s later; the **gateway** does not.) |
 | **IoT edge — Smart-Home** | At each home | Home Assistant at-home, near devices. |
-| **Production Postgres@16 + Redis** | **Mac mini `.68`** | D3 — external data services, kept off the cluster on purpose. |
-| **Legacy systems** | Mac mini `.68` | As-is. |
+| **Production Postgres@16/17 + Redis** | **Dell host Docker containers (`10.42.0.1:<port>`)** | Standalone containers on the Dell host (`108jobs-postgres` on `:5434`, `pos108-postgres-cloud-1` on `:5433`) bound to the CNI gateway. Keeps prod DB performant and direct for pods without LAN latency. (Supersedes Mac mini `.68`). |
+| **Legacy systems / Mac mini `.68`** | Mac mini `.68` (Retired / Unreachable) | Retired from prod DB. Does not answer ping/ssh from `.76`; legacy services moved or decommissioned. |
 
 ---
 
@@ -225,7 +229,7 @@ Legend — **IaC**: ✅ ready · 🟡 partial (Dockerfile/compose, needs k8s/Hel
 
 | Aspect | `prod` | `staging` |
 |--------|--------|-----------|
-| Databases | Mac mini `.68` (`postgres@16`, real DBs) | in-cluster StatefulSet PG/Redis/NATS (disposable) |
+| Databases | Dell host Docker containers (`10.42.0.1:5433/5434`) | in-cluster StatefulSet PG/Redis/NATS (disposable) |
 | Hostnames | real domains, public TLS (Let's Encrypt prod issuer) | `staging.*`, staging issuer (or self-signed) |
 | Secrets | Sealed Secrets (prod keys) | Sealed Secrets (staging keys) — **never reuse prod secrets** |
 | Replicas / HPA | HPA on (e.g. Notification min 3 / max 10) | low fixed replicas (1) to save the node |
@@ -238,10 +242,13 @@ Legend — **IaC**: ✅ ready · 🟡 partial (Dockerfile/compose, needs k8s/Hel
 
 ## 7. Data & stateful policy (D5)
 
-- **Prod state is external** (Mac mini `.68`). Pods connect over the LAN via a
-  stable in-cluster `ExternalName`/`Endpoints` Service. One PG instance with a
-  database + least-privilege role per service (the existing
-  `deploy/postgres-init/01-init-databases.sql` pattern carries over).
+- **Prod state is external to K3s but runs directly on the Dell host.** Production databases
+  run as standalone Docker containers bound to the CNI gateway IP `10.42.0.1:<port>`
+  (`108jobs-postgres` on `:5434` for heros/jobs with max_connections 100,
+  `pos108-postgres-cloud-1` on `:5433` for pos108 cloud with max_connections 600).
+  Pods connect directly over CNI without crossing external LAN or requiring extra
+  cluster Endpoints objects. (Supersedes the earlier Mac mini `.68` setup; `.68` is
+  unreachable and no longer hosts prod DBs).
   - **Money-path split** (carry over BipByte D-PD3 thinking): keep
     finance-critical DBs (AccountZing ledger, Payment, BipByte wallet/ledger/gift)
     isolated — separate instance or at least separate role/backup policy from the
@@ -252,8 +259,8 @@ Legend — **IaC**: ✅ ready · 🟡 partial (Dockerfile/compose, needs k8s/Hel
 - **Migrations** run at boot (`sqlx::migrate!`); a failed migration aborts startup
   and the old pod keeps serving until the new one is `Ready` → safe rollback.
   Additive-only migration discipline already enforced in pos108.
-- **Backups** are the resilience story (no HA): scheduled `pg_dump`/PITR on the Mac
-  mini prod DBs + a **rehearsed restore drill** (open audit item for BipByte;
+- **Backups** are the resilience story (no HA): scheduled `pg_dump`/PITR on the
+  Dell host Docker prod DBs + a **rehearsed restore drill** (open audit item for BipByte;
   make it the ecosystem standard). Staging needs none (disposable).
 
 ---
@@ -268,8 +275,8 @@ Legend — **IaC**: ✅ ready · 🟡 partial (Dockerfile/compose, needs k8s/Hel
   Configure **Traefik ACME DNS-01 via RFC2136** (self-hosted BIND) for the wildcard certs (Appendix A);
   install Sealed Secrets + Prometheus+Grafana (cert-manager optional — internal
   certs only); create `prod`/`staging` namespaces with quotas/NetworkPolicy/
-  PriorityClass; wire the GHCR pull secret; create the `ExternalName` to Mac mini
-  PG; stand up staging in-cluster PG/Redis/NATS.
+  PriorityClass; wire the GHCR pull secret; ensure connectivity to Dell host prod
+  PG/Redis containers on `10.42.0.1:<port>`; stand up staging in-cluster PG/Redis/NATS.
 - **Wave 1 — Notification** (✅ Helm ready): the reference rollout. Validates
   ingress, TLS, secrets, metrics, NATS end-to-end. Locks the per-service template.
 - **Wave 2 — Core auth + POS path:** **Identity** → **pos108 (cloud)** → **Payment**.
@@ -301,7 +308,9 @@ another nginx backend**:
 - **Service-to-service** stays in-cluster via ClusterIP DNS (`<svc>.<ns>.svc:80`,
   `pg-central.<ns>.svc:5432`, `redis-central.<ns>.svc:6379`, `nats.<ns>.svc:4222`).
   No host ports for east-west traffic.
-- **Pods → prod DB**: pods dial `pg-central.prod.svc` (Endpoints → Mac mini `.68`).
+- **Pods → prod DB**: pods dial `10.42.0.1:<port>` (CNI gateway to the Dell host Docker
+  containers: `108jobs-postgres` on `:5434`, `pos108-postgres-cloud-1` on `:5433`).
+  (Supersedes `pg-central.prod.svc` → `.68`).
   NetworkPolicy must allow **intra-namespace on ALL ports** — the original 8080-only
   ingress rule blocked app→`postgres:5432` (fixed in `03-networkpolicy.yaml`, 2026-06-19).
 - **NodePort exposure**: NodePorts bind `0.0.0.0` → also reachable on the Dell's public
