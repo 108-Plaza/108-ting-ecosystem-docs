@@ -19,13 +19,23 @@
 
 ## 2. Runner Allocation Strategy
 
+> 🔴 **หัวข้อนี้ไม่ใช่ SoT ของเรื่อง runner — เจ้าของชี้ขาด 2026-09-09**
+>
+> SoT คือ **`108-Plaza/108-Ting-Ecosystem` → `docs/CI_RUNNER_STANDARD.md`**
+> · กฎคือ **§1.2 ห้ามใช้ GitHub-hosted** และ **ข้อยกเว้นมีได้เฉพาะที่อยู่ใน §2 ของไฟล์นั้น**
+>
+> ⇒ **ห้ามอ้างตารางข้างล่างเป็นเหตุผลที่ job ใดใช้ `ubuntu-latest`** — โดยเฉพาะแถว *Public Repos*
+> ซึ่งเคยถูกอ้างแบบนั้นมาแล้ว ตารางนี้เหลือไว้เป็น *บริบทว่าทำไม runner ถึงเคยค้างคิว*
+> ไม่ใช่ใบอนุญาต · จะใช้ GitHub-hosted ที่ไหนต้องไปเพิ่มแถวใน `CI_RUNNER_STANDARD.md` §2.1
+> พร้อมเหตุผล **และ** ใส่มาร์กเกอร์ `# hosted-ok: <เหตุผล>` เหนือบรรทัด `runs-on` ตาม §2.2
+
 ปัญหาหลักในอดีตคือคิวของ self-hosted runner ติดขัดหรือบาง repo ไม่ได้อยู่ใน org runner group ทำให้ workflow ค้างตลอดกาล:
 
-| ประเภท Repo | การตั้งค่า Runner | เหตุผล |
+| ประเภท Repo | การตั้งค่า Runner | บันทึกไว้เพราะ |
 |---|---|---|
-| **Public Repos** (เช่น `memory-search`, `pos108-downloads`, `thai-geography`) | `runs-on: ubuntu-latest` | ฟรี, รันได้ทันทีบน GitHub infrastructure ไม่ต้องต่อคิว self-hosted ของ Dell |
-| **Private Repos / Repos ทั่วไป** | `runs-on: [self-hosted, Linux, X64]` | รองรับการเข้าถึง registry ภายในและ network ขององค์กร |
-| **Monorepo / Complex build** | แยกตาม job (เช่น Rust ใช้ self-hosted / TS-Dart ใช้ ubuntu-latest หรือ self-hosted) | ลดภาระ resource และแยก failure domain |
+| **Public Repos** (เช่น `memory-search`, `pos108-downloads`, `thai-geography`) | ~~`runs-on: ubuntu-latest`~~ **แทนที่แล้ว** | เหตุผลเดิมที่เขียนไว้คือ "ฟรี ไม่ต้องต่อคิว" ซึ่ง**ไม่ใช่เหตุผลที่ยกอ้างได้อีก** · เหตุผล**จริง**ที่ repo public ยังใช้ hosted อยู่คือ org self-hosted runner group **ปฏิเสธ repo public โดย default** (กันความเสี่ยง fork PR) — เป็นข้อจำกัดทางเทคนิค บันทึกไว้ที่ `CI_RUNNER_STANDARD.md` §2.1 |
+| **Private Repos / Repos ทั่วไป** | `runs-on: [self-hosted, Linux, X64]` | รองรับการเข้าถึง registry ภายในและ network ขององค์กร — ตรงกับ SoT §1.1 |
+| **Monorepo / Complex build** | แยกตาม job | ลดภาระ resource และแยก failure domain · **แต่ job ที่เป็น hosted ต้องมีแถวใน SoT §2.1** ไม่ใช่แยกได้ตามใจ |
 
 ### Concurrency Block (ทุก workflow ต้องมี)
 เพื่อป้องกัน runner ค้างเมื่อมีการ push บ่อยครั้ง:
