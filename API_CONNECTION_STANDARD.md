@@ -54,6 +54,12 @@ Readers already disagree with writers inside one call chain:
 - bank-bot puts `login_already_running` in `message` only (`board_unlock.rs:170`). RPB reads the reason from `/data/reason` (`bank_bot.rs:707-711`), so `reason` is `None` on the real path. RPB's test mocks `data.reason` (`bank_bot.rs:2067-2069`), so no test can catch it.
 - RPB reads bank-bot's init-setting job at top-level `/job` (`bank_bot.rs:255`) but the unlock job at `/data/unlock_id` (`:337`).
 
+- Note 2 FE (note-front-end-main) has one Dio client, but its readers try several shapes because RPB answers several:
+  - success needs `code == 200` (`lib/data/network/responder.dart:4`). RPB's bare 200 bodies (`books/routes.rs:1035,1087`) therefore arrive on the failure branch.
+  - `BoardCheckResult.fromAnswer` accepts `{steps,boards}` both bare and inside `data` (`lib/models/book/board_check.dart:61-67`).
+  - errors are read from `error`, `code` or `reason`, depending on the store method (`agent_book_store.dart:911,1547,1699`).
+  - every 500 shows `authentication_error`, whatever RPB sent (`lib/utils/dio/dio_error_util.dart:83-84`).
+
 Each of these is a connection test waiting to fail the way §1.1 did.
 
 ---
@@ -164,9 +170,9 @@ We are in development (fleet rules: no app is in production yet). Changing a wir
 |---|---|
 | bank-bot (bank) | Every refusal carries `data.reason` (today `login_already_running`, `user_or_account is required`, … are `message` only). `/screenlink/program` refusals move from `{"error":…}` to the envelope. Add `contracts/` fixtures for every route 168pay relays. |
 | 168pay (168pay) | Door refusals become the full envelope (`code` + `data.reason`; `message` kept). `AppError` (`api/src/error.rs`) moves from `{status, code:"STRING"}` to the envelope, with the old string as `data.reason`. Board routes fold into one pass-through channel (`POST /api/bank/services/board/{*rest}` + allowlist table; plan from the 168pay relay survey, 2026-11-24). Relay tests load bank-bot's fixtures. |
-| rust-project-backend (note) | `MyError` answers `{code, message, data:{reason}}` instead of `{code, error}` / `{error}`. `bank_bot.rs` reads refusals with one function, `code` + `data.reason`. Init-setting reads `data.job`. Tests load 168pay and bank-bot fixtures. |
+| rust-project-backend (note) | Hand-built bodies (`books/routes.rs:577-582,662-667,829-834,1035,1087,1091`, `internal/callbacks.rs` `{"status":"ok"}`) move to `ok!`/`err!`. `MyError` answers `{code, message, data:{reason}}` instead of `{code, error}` / `{error}`. `bank_bot.rs` reads refusals with one function, `code` + `data.reason`. Init-setting reads `data.job`. Tests load 168pay and bank-bot fixtures. |
 | aes_channel users (RPB, bank-bot, 168pay) | §2.1, additive. |
-| note-front-end-main (note-fe) | Read `code` + `data.reason` from RPB, through its one API client, after RPB's fixtures land. |
+| note-front-end-main (note-fe) | After RPB's fixtures land: one reader in the Dio client (`responder.dart`, `dio_error_util.dart`) branches on `code` + `data.reason` for every route. Remove the per-store fallbacks (`error ?? code`, bare-or-`data`), and show RPB's `data.reason` on a 500 instead of `authentication_error`. |
 | jh-api, pos108-*, other lanes | Their client-facing APIs per decision O1. Service-to-service calls they make (e.g. to Payment-Platform, identity) follow §2–§5 now. |
 
 ---
