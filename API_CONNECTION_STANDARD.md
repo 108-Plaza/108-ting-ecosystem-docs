@@ -98,12 +98,19 @@ This is additive: readers of `message` keep working while readers move to `data.
 
 ### 2.2 Where the envelope does not apply
 
-- **The board wire (MQTT, bank-bot ⇄ ScreenLink boards).** It has its own versioned frame, written and parsed by a single crate, `ScreenLink/esp32s3-rs/mqtt_proto`, on both ends:
-  - request `{v:1, id, op, exp, body:{…}}` (`lib.rs:95`);
-  - error `{v:1, id, ok:false, error:"<snake_case>", detail?}` (`:319`, `:421`);
-  - answer `{…fields, v:1, id, ok:true}` (`:406`), capped at 32 KiB (`:34`).
-  
-  It already meets §4 because one crate is both writer and reader. Lifecycle rules (live vs. retained replay) are in bank-bot `docs/design/wd-repair.md` §4.2 step 8. **Do not wrap it in the HTTP envelope.**
+- **The board wire (MQTT, bank-bot ⇄ ScreenLink boards)** has its own versioned frame. The board side writes and parses it with `ScreenLink/esp32s3-rs/mqtt_proto` (ScreenLink sub-controller review, PR 30 issuecomment-7128039922):
+  - request: `{v:1, id, op, exp, body:{…}}`. `body` must be an object; `id` is 32 hex (`lib.rs:95` `parse_request`).
+  - error: `{v:1, id, ok:false, error:"<snake_case>", detail?, now_ms?}`. `now_ms` is set on `expired` (`:319` `ErrorReply`, `:421` `reply_error`).
+  - answer: the answer's own fields plus `v:1` and the echoed `id`, written last so they cannot be overwritten (`:406` `reply_answer`). `reply_answer` itself adds no `ok`.
+  - size: a reply is capped at 32 KiB (`:34` `MAX_REPLY_BYTES`). Over the cap, optional fields are dropped first and the reply carries `truncated:true`. If it is still over, it becomes the error `reply_too_large`, never a cut-off body.
+  - per-app filters come from the caller's config inside the request `body`. If one is absent, the documented default applies and the reply is byte-identical to before. If it is malformed, the board answers a named error key and never guesses (`:377` `read_look_min_h`, owner 2026-11-24, ScreenLink#422).
+
+  **bank-bot does not use `mqtt_proto`.** It talks through `rumqttc`, building requests and parsing replies by hand (`src/banks/screenlink/mqtt/client.rs`, `board_orders.rs`). So the two ends can drift, and §5 applies in both directions:
+  - ScreenLink owns the reply fixtures.
+  - bank-bot owns the request fixtures. `docs/design/fixtures/board-program.json` is the first one.
+  - Each side's tests load the other side's fixtures.
+
+  Lifecycle rules (live vs. retained replay) are in bank-bot `docs/design/wd-repair.md` §4.2 step 8. **Do not wrap this frame in the HTTP envelope.**
 - Board HTTP (`/status`, OTA) on the Pi LAN is local diagnostics, not a service contract.
 
 ---
@@ -183,6 +190,7 @@ Service-to-service readers that deploy together with the writer, e.g. 168pay and
 | 168pay (168pay) | Door refusals become the full envelope (`code` + `data.reason`; `message` kept). `AppError` (`api/src/error.rs`) moves from `{status, code:"STRING"}` to the envelope, with the old string as `data.reason`. Board routes fold into one pass-through channel (`POST /api/bank/services/board/{*rest}` + allowlist table; plan from the 168pay relay survey, 2026-11-24). Relay tests load bank-bot's fixtures. |
 | rust-project-backend (note) | Hand-built bodies (`books/routes.rs:577-582,662-667,829-834,1035,1087,1091`, `internal/callbacks.rs` `{"status":"ok"}`) move to `ok!`/`err!`. `MyError` answers `{code, message, data:{reason}}` instead of `{code, error}` / `{error}`. `bank_bot.rs` reads refusals with one function, `code` + `data.reason`. Init-setting reads `data.job`. Tests load 168pay and bank-bot fixtures. |
 | aes_channel users (RPB, bank-bot, 168pay) | §2.1, additive. |
+| ScreenLink + bank-bot (board wire) | §2.2: two-way MQTT fixtures. ScreenLink publishes reply fixtures from `mqtt_proto`, and bank-bot publishes request fixtures; each side's tests load the other's. |
 | note-front-end-main (note-fe) | After RPB's fixtures land: one reader in the Dio client (`responder.dart`, `dio_error_util.dart`) branches on `code` + `data.reason` for every route. Remove the per-store fallbacks (`error ?? code`, bare-or-`data`), and show RPB's `data.reason` on a 500 instead of `authentication_error`. |
 | jh-api, pos108-*, other lanes | Their client-facing APIs per decision O1. Service-to-service calls they make (e.g. to Payment-Platform, identity) follow §2–§5 now. |
 
