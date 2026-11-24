@@ -86,6 +86,7 @@ Rules:
 1. **Every non-2xx answer carries `data.reason`, 5xx included.** A 500 answers e.g. `{"code":500,"message":"…","data":{"reason":"internal_error"}}`, so a screen can name it instead of guessing.
 2. **One reason token per cause, at every hop.** A hop that relays a refusal keeps the writer's token. A hop that refuses on its own uses its own token, and never reuses another hop's token for a different cause.
 3. **Programs branch on `code` + `data.reason` and nothing else.** Never on `message`, never on a field another route happens to put at the top level.
+   A `reason` inside a 2xx payload, e.g. a failed hop in `data.steps[].reason`, is **content**, not a refusal: the request succeeded, and the payload reports what it found.
 4. **A new field goes inside `data`.** The top level has exactly `code`, `message` and `data`.
 5. **Success payloads are objects named by meaning**, e.g. `data.unlock_id` and `data.job`, never a bare top-level `job`.
 6. **Wire field names are `snake_case`** for service-to-service bodies (bank-bot, 168pay, RPB already are). A client-facing API that already ships `camelCase` to an app (jh-api, pos) keeps it, unless decision O1 says otherwise. Money keeps the ecosystem rule: integer satang, or a decimal **string**, never a float.
@@ -178,7 +179,7 @@ Service-to-service readers that deploy together with the writer, e.g. 168pay and
 
 | Repo (lane) | Change |
 |---|---|
-| bank-bot (bank) | Every refusal carries `data.reason` (today `login_already_running`, `user_or_account is required`, … are `message` only). `/screenlink/program` refusals move from `{"error":…}` to the envelope. Add `contracts/` fixtures for every route 168pay relays. |
+| bank-bot (bank) | Every refusal carries `data.reason`. Today `login_already_running`, `user_or_account is required` and the like are in `message` only, with `data` absent: `board_unlock.rs` `reply`, `board_check.rs` `error_reply`. The init-setting `202 {code, job}` moves `job` into `data.job` (`board_init.rs:151`), first sent in both places, before RPB's reader moves. `/screenlink/program` answers the envelope for both the refusal (`{"error":…}`) and the success (today a bare `Preview`). Add `contracts/` fixtures for every route 168pay relays. (bank lane review, PR 30 issuecomment-7128042183.) |
 | 168pay (168pay) | Door refusals become the full envelope (`code` + `data.reason`; `message` kept). `AppError` (`api/src/error.rs`) moves from `{status, code:"STRING"}` to the envelope, with the old string as `data.reason`. Board routes fold into one pass-through channel (`POST /api/bank/services/board/{*rest}` + allowlist table; plan from the 168pay relay survey, 2026-11-24). Relay tests load bank-bot's fixtures. |
 | rust-project-backend (note) | Hand-built bodies (`books/routes.rs:577-582,662-667,829-834,1035,1087,1091`, `internal/callbacks.rs` `{"status":"ok"}`) move to `ok!`/`err!`. `MyError` answers `{code, message, data:{reason}}` instead of `{code, error}` / `{error}`. `bank_bot.rs` reads refusals with one function, `code` + `data.reason`. Init-setting reads `data.job`. Tests load 168pay and bank-bot fixtures. |
 | aes_channel users (RPB, bank-bot, 168pay) | §2.1, additive. |
