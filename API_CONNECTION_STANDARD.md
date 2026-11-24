@@ -82,10 +82,13 @@ Every HTTP answer between services, and from a backend to its apps, is this JSON
 
 Rules:
 
-1. **Programs branch on `code` + `data.reason` and nothing else.** Never on `message`, never on a field another route happens to put at the top level.
-2. **A new field goes inside `data`.** The top level has exactly `code`, `message` and `data`.
-3. **Success payloads are objects named by meaning**, e.g. `data.unlock_id` and `data.job`, never a bare top-level `job`.
-4. **Wire field names are `snake_case`** for service-to-service bodies (bank-bot, 168pay, RPB already are). A client-facing API that already ships `camelCase` to an app (jh-api, pos) keeps it, unless decision O1 says otherwise. Money keeps the ecosystem rule: integer satang, or a decimal **string**, never a float.
+0. **Success is any 2xx** (200, 201, 202 …), never "`code == 200`". A reader that accepts only 200 fails on every 202 (`responder.dart:4` vs RPB's 202 `init_setting_started`).
+1. **Every non-2xx answer carries `data.reason`, 5xx included.** A 500 answers e.g. `{"code":500,"message":"…","data":{"reason":"internal_error"}}`, so a screen can name it instead of guessing.
+2. **One reason token per cause, at every hop.** A hop that relays a refusal keeps the writer's token. A hop that refuses on its own uses its own token, and never reuses another hop's token for a different cause.
+3. **Programs branch on `code` + `data.reason` and nothing else.** Never on `message`, never on a field another route happens to put at the top level.
+4. **A new field goes inside `data`.** The top level has exactly `code`, `message` and `data`.
+5. **Success payloads are objects named by meaning**, e.g. `data.unlock_id` and `data.job`, never a bare top-level `job`.
+6. **Wire field names are `snake_case`** for service-to-service bodies (bank-bot, 168pay, RPB already are). A client-facing API that already ships `camelCase` to an app (jh-api, pos) keeps it, unless decision O1 says otherwise. Money keeps the ecosystem rule: integer satang, or a decimal **string**, never a float.
 
 ### 2.1 Channel-layer refusals (the AES seal)
 
@@ -165,6 +168,13 @@ A reviewer who PASSes a PR with a breach that §6 lists has made the same breach
 ## 7. Bringing existing services in line
 
 We are in development (fleet rules: no app is in production yet). Changing a wire shape is cheapest now, so existing routes are converged, not grandfathered. Each lane controller turns its row into tickets. The writer's fixture lands **before** any reader changes.
+
+**Order for a shape that installed apps already read** (note-fe comment on PR 30, issuecomment-7128039078). Installed Note 2 builds read RPB's top-level `error`; they break on the day it disappears.
+1. **The writer adds the new field and keeps the old one.** RPB sends `data.reason` and keeps `error` with the same token. This step is additive.
+2. **Readers move to the new field first, with the old one as fallback.** The app reads `data.reason ?? error`, and ships.
+3. **The writer drops the old field** only after every reader's release that reads the new one is installed. The reader's lane controller confirms that, in writing, on the writer's ticket.
+
+Service-to-service readers that deploy together with the writer, e.g. 168pay and RPB, skip the wait: step 3 follows as soon as they are deployed.
 
 | Repo (lane) | Change |
 |---|---|
