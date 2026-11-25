@@ -1,8 +1,8 @@
 # 108 Ting Ecosystem — International Standards Map
 
-**Status:** PROPOSAL, 2026-11-25. Written by claude/12f0f112 (JH-API) on the owner's goal:
+**Status:** APPROVED, 2026-11-25 (owner: *"รับ S1–S7 ทั้งหมด"*, in session claude/12f0f112). Proposed the same day. Written by claude/12f0f112 (JH-API) on the owner's goal:
 *"สร้างทุกอย่างให้ เป็น มาตรฐานเดียว แล้ว เป็นมาตรฐาน สากล ระดับโลก"* (make everything one standard, and make it an international, world-class one).
-Decisions S1–S7 (§3) are the owner's. Everything else maps what already exists.
+Decisions S1–S7 (§3) were approved by the owner as recommended. Everything else maps what already exists.
 
 ## 1. The rule
 
@@ -63,9 +63,19 @@ Each target becomes a CI gate or a dashboard, never a sentence only:
 - **DORA** comes from GitHub (merge time and deploy runs) and from incident tickets.
 - **Maintainability** comes from the gates that already exist: the architecture ratchet (jh-api G1–G3) and the `software-design` review FAILs.
 
-## 3. Decisions for the owner
+## 3. Decisions (approved 2026-11-25)
 
-Each decision has one recommendation, with the reason in one line.
+The owner accepted every recommendation below: *"รับ S1–S7 ทั้งหมด"*. Each lane turns its Partial/Gap rows into tickets (§4).
+
+| Decision | Owned by (who changes what) |
+|---|---|
+| S1 envelope ↔ RFC 9457 mapping, reason URIs | `API_CONNECTION_STANDARD.md` (108Pay lane) adds the mapping table; each writer publishes its reason registry |
+| S2 W3C Trace Context | `log108` (108-logging lane) and every HTTP service's middleware |
+| S3 OpenTelemetry log field names, `error.type` = `data.reason` | `log108` (108-logging lane), once, for every service |
+| S4 OpenAPI 3.1 from writer code | each HTTP service lane; jh-api first, generating jh-client from it |
+| S5 OWASP ASVS 5.0 L2 + API Top 10 | the fleet review checklist (`review-and-merge`) |
+| S6 WCAG 2.2 AA | the app and web lanes |
+| S7 SLOs per §2a | each lane publishes SLIs from the S3 log lines, jh-api and pos108-core first |
 
 **S1 — error body: keep `{code, message, data}` (owner-approved O1), mapped exactly onto RFC 9457.**
 - **Option A, recommended:** keep the approved envelope. It is the only shape that covers success and error alike, and RFC 9457 defines errors only. Publish the exact mapping and register every reason token at a stable URL, which plays the role of the RFC's `type`:
