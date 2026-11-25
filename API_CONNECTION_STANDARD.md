@@ -128,7 +128,7 @@ Owner decision S1 = A (§8). The envelope stays the one wire shape. RFC 9457 is 
 Rules:
 
 1. **The body stays `application/json` with the §2 envelope.** No service answers `application/problem+json`: that would make a second shape for errors only, against O1.
-2. **Every writer publishes its reason registry** in `contracts/`, one entry per token: `reason` · the `code`(s) it comes with · what it means · where it is raised (`file:line` or the code symbol) · `retired` (date, or empty). A hand-kept file is a markdown table with exactly those five columns. Tokens the shared channel crate writes (§2.1) are registered once, in that crate's repo. Prefer a file **generated from the code** (e.g. jh-api `contracts/error-reasons.json`, 619 reasons, jh-api PR 2272), so it cannot drift; a hand-kept `contracts/reasons.md` table is the fallback. A `data.reason` a PR adds that is missing from the registry is a FAIL (§6).
+2. **Every writer publishes its reason registry** in `contracts/`, one entry per token: `reason` · the `code`(s) it comes with · what it means · where it is raised (`file:line` or the code symbol) · `retired` (date, or empty). A hand-kept file is a markdown table with exactly those five columns. Tokens the shared channel crate writes (§2.1) are registered once, in that crate's repo. Prefer a file **generated from the code**, so it cannot drift (jh-api's `contracts/error-reasons.json`, from jh-api PR 2272, is the first); a hand-kept `contracts/reasons.md` table is the fallback. A generated file carries the same five fields, with `codes` as a list even when it holds one code; meaning comes from the source's doc comment. jh-api's file holds only status and source today, so it must grow the other fields before it counts. A `data.reason` a PR adds that is missing from the registry is a FAIL (§6).
 3. **A token keeps its meaning forever.** A changed cause gets a new token; the old token is marked retired in the registry, never reused (§4.4).
 4. Log lines carry the same token as `error.type` (decision S3), so the screen, the reader's branch and the log name one cause with one token.
 
@@ -211,6 +211,8 @@ Use it when adding fields beside the old ones would change what an old field mea
 3. **The writer makes the envelope the only shape** and stops reading the header, once every reader's release that sends it is installed. The reader's lane controller confirms that, in writing, on the writer's ticket.
 
 The header name is fixed fleet-wide, so a reader written once works against every writer that uses this path.
+
+**Reason registries:** each lane's change ticket also publishes the §2.3 registry for the tokens its writers already send.
 
 | Repo (lane) | Change |
 |---|---|
