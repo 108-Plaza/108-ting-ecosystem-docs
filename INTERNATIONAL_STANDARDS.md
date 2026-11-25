@@ -46,7 +46,8 @@ Status:
 
 ## 2a. Quality targets: stable, fast, reliable, easy to maintain
 
-Owner, 2026-11-25: *"ความ เสถียร์ ต้องได้ ความเร็ว ความน่าเชื่อถือ ความง่ายในการดูแล แก้ไข"* (it must be stable, fast and reliable, and easy to look after and fix).
+Owner, 2026-11-25: *"ความ เสถียร์ ต้องได้ ความเร็ว ความน่าเชื่อถือ ความง่ายในการดูแล แก้ไข"* (it must be stable, fast and reliable, and easy to look after and fix) · *"ง่ายในที่นี้คือ ai ทำงานร่วมกับคน"* ("easy" here means AI working together with people).
+The system is run by AI agents supervised by at most two people (`ENGINEERING_STANDARD_AI_AUTHORED.md`). So "easy to maintain" is measured by how far an agent gets on its own, and how small the human step is.
 
 The international model for these qualities is **ISO/IEC 25010** (software product quality). They are measured the way SRE practice does (**SLIs and SLOs** with error budgets), and delivery health is measured with the **DORA** four keys.
 
@@ -55,7 +56,7 @@ The international model for these qualities is **ISO/IEC 25010** (software produ
 | เสถียร (stable) | Reliability: maturity, availability | share of requests answered without a 5xx, per service, over 30 days | ≥ 99.9% per client-facing API (decision **S7**) |
 | เร็ว (fast) | Performance efficiency: time behaviour | p95 server latency per route template (`http.route`), from the log or metric line | p95 ≤ 300 ms for reads and ≤ 800 ms for writes, outside calls to third parties (**S7**) |
 | น่าเชื่อถือ (reliable) | Reliability: fault tolerance, recoverability | correct results under retry (`Idempotency-Key`), and recovery time after a failure (DORA *time to restore*) | restore in < 1 hour; zero duplicate money movements |
-| ดูแลง่าย แก้ไขง่าย (easy to maintain and fix) | Maintainability: modularity, reusability, analysability, modifiability, testability | DORA *change lead time* and *change failure rate*; the `software-design` copy count (copies of one logic); the `architecture-rules` ratchet counts | change failure rate < 15%; copy counts only go down; every fault reaches its log line through one token (§S3) |
+| ดูแลง่าย แก้ไขง่าย (easy to maintain and fix), meaning **AI and people working together** | Maintainability: analysability, modifiability, testability, reusability (ISO/IEC 25010) | (1) **an agent can go from a symptom to the cause on its own**: the screen's reason equals the `data.reason` the app reads, which equals the log's `error.type`, which leads to one place in the code; (2) every decision has its reason written where the next session reads it; (3) DORA *change lead time* and *change failure rate*; (4) the `software-design` copy count and the architecture ratchet | a fault is diagnosed by an agent from one token, with no human digging; a person's part is one decision or one approval, never investigation; change failure rate < 15%; copy counts only go down |
 
 Each target becomes a CI gate or a dashboard, never a sentence only:
 - **Latency and error SLIs** come from the S3 log lines (one per answer, with `http.route` and `http.response.status_code`) in VictoriaLogs.
