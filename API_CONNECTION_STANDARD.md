@@ -51,13 +51,13 @@ Readers already disagree with writers inside one call chain:
 
 - RPB's `start_service_error` and `balance_order_error` treat a body as a refusal only when it has a numeric `code` (`contrib/bank_bot/src/bank_bot.rs:662-669, 699-706`). 168pay's own refusals have none, so they fall through as raw text.
   In the same file, `board_check_error` reads `message` and `/data/reason` without needing `code` (`:738-756`). One body, two readings.
-- bank-bot puts `login_already_running` in `message` only (`board_unlock.rs:170`). RPB reads the reason from `/data/reason` (`bank_bot.rs:707-711`), so `reason` is `None` on the real path. RPB's test mocks `data.reason` (`bank_bot.rs:2067-2069`), so no test can catch it.
+- bank-bot puts `login_already_running` in `message` only (`board_unlock.rs:170`). RPB reads the reason from `/data/reason` (`bank_bot.rs:707-711`), so `reason` is `None` on the real path. RPB's test mocks `data.reason` (`bank_bot.rs:2118`), so no test can catch it.
 - RPB reads bank-bot's init-setting job at top-level `/job` (`bank_bot.rs:255`) but the unlock job at `/data/unlock_id` (`:337`).
 
 - Note 2 FE (note-front-end-main) has one Dio client, but its readers try several shapes because RPB answers several:
-  - success needs `code == 200` (`lib/data/network/responder.dart:4`). RPB's bare 200 bodies (`books/routes.rs:1035,1087`) therefore arrive on the failure branch.
+  - success needs `code == 200` (`lib/data/network/responder.dart:4`). RPB's bare 200 bodies (`books/routes.rs:1105,1157`) therefore arrive on the failure branch.
   - `BoardCheckResult.fromAnswer` accepts `{steps,boards}` both bare and inside `data` (`lib/models/book/board_check.dart:61-67`).
-  - errors are read from `error`, `code` or `reason`, depending on the store method (`agent_book_store.dart:911,1547,1699`).
+  - errors are read from `error`, `code` or `reason`, depending on the store method (`agent_book_store.dart:937,1569-1587,1725`).
   - every 500 shows `authentication_error`, whatever RPB sent (`lib/utils/dio/dio_error_util.dart:83-84`).
 
 Each of these is a connection test waiting to fail the way §1.1 did.
@@ -102,7 +102,7 @@ This is additive: readers of `message` keep working while readers move to `data.
   - request: `{v:1, id, op, exp, body:{…}}`. `body` must be an object; `id` is 32 hex (`lib.rs:95` `parse_request`).
   - error: `{v:1, id, ok:false, error:"<snake_case>", detail?, now_ms?}`. `now_ms` is set on `expired` (`:319` `ErrorReply`, `:421` `reply_error`).
   - answer: the answer's own fields plus `v:1` and the echoed `id`, written last so they cannot be overwritten (`:406` `reply_answer`). `reply_answer` itself adds no `ok`.
-  - size: a reply is capped at 32 KiB (`:34` `MAX_REPLY_BYTES`). Over the cap, optional fields are dropped first and the reply carries `truncated:true`. If it is still over, it becomes the error `reply_too_large`, never a cut-off body.
+  - size: a reply is capped at 32 KiB (`:34` `MAX_REPLY_BYTES`). Over the cap, `reply_look` drops optional fields first and marks the reply `truncated:true`; `reply_answer` goes straight to the error `reply_too_large`. Either way, never a cut-off body.
   - per-app filters come from the caller's config inside the request `body`. If one is absent, the documented default applies and the reply is byte-identical to before. If it is malformed, the board answers a named error key and never guesses (`:377` `read_look_min_h`, owner 2026-11-24, ScreenLink#422).
 
   **bank-bot does not use `mqtt_proto`.** It talks through `rumqttc`, building requests and parsing replies by hand (`src/banks/screenlink/mqtt/client.rs`, `board_orders.rs`). So the two ends can drift, and §5 applies in both directions:
@@ -153,7 +153,7 @@ For every route another service calls:
 4. **A CI job in the reader compares its copies with the writer's `main`** (`gh api repos/108-Plaza/<writer>/contents/contracts/...`) and goes red on any difference. When the writer changes shape, every reader goes red the same day, not on the first live run.
 5. **Relays carry fixtures for both sides they touch**, and test that a writer fixture passes through byte-for-byte equal.
 
-jh-api already has the pattern for its own wire: `crates/error/src/wire_status_snapshot.txt` (pinned by the test at `crates/error/src/lib.rs:2568`) and the `crates/contract_tests` crate. Follow it.
+jh-api already has the pattern for its own wire: `crates/error/src/wire_status_snapshot.txt` (pinned by the test `wire_json_and_status_match_the_pre_sort_snapshot` at `crates/error/src/lib.rs:2779`) and the `crates/contract_tests` crate. Follow it.
 
 ---
 
@@ -163,7 +163,7 @@ Owner: *"ใคร ดื้อจะให้ไปอยู่ นอกบ้
 
 | Breach | What happens |
 |---|---|
-| A PR adds or changes a wire shape outside §2, or rewrites an answer in a relay (§3), or cites a shape from a comment (§4.2) | Reviewer verdict **FAIL**. It cannot merge. There is no "PASS + follow-up" for this. |
+| A PR adds or changes a wire shape outside §2, or rewrites an answer in a relay (§3), or cites a shape from a comment (§4.2) | Reviewer verdict **FAIL**. It cannot merge. There is no "PASS + follow-up" for this. **Exception:** a PR that follows §7's three-step order may keep an old field (e.g. a top-level `error` or `job`) beside the envelope, as long as it names the step it is on and the ticket for the step that drops the old field. |
 | A PR adds a route another service calls, with no writer fixture and no writer test (§5.1–5.2) | **FAIL**. |
 | A reader test fakes another service's body by hand instead of loading the fixture (§5.3) | **FAIL**. |
 | A queue worker's PR is FAILed for any row above | One strike under the queue's three-strike rule (skill `tq-worker` § Non-compliance): a warning, then the ticket goes back to `ready`, then removal from the queue and the owner notified. Every strike is recorded on the ticket. |
@@ -188,10 +188,10 @@ Service-to-service readers that deploy together with the writer, e.g. 168pay and
 |---|---|
 | bank-bot (bank) | Every refusal carries `data.reason`. Today `login_already_running`, `user_or_account is required` and the like are in `message` only, with `data` absent: `board_unlock.rs` `reply`, `board_check.rs` `error_reply`. The init-setting `202 {code, job}` moves `job` into `data.job` (`board_init.rs:151`), first sent in both places, before RPB's reader moves. `/screenlink/program` answers the envelope for both the refusal (`{"error":…}`) and the success (today a bare `Preview`). Add `contracts/` fixtures for every route 168pay relays. (bank lane review, PR 30 issuecomment-7128042183.) |
 | 168pay (168pay) | Door refusals become the full envelope (`code` + `data.reason`; `message` kept). `AppError` (`api/src/error.rs`) moves from `{status, code:"STRING"}` to the envelope, with the old string as `data.reason`. Board routes fold into one pass-through relay: one allowlist table, one handler and one door function, mounted only on the table's paths, so an unknown path still answers 404 (168pay#256). Relay tests load bank-bot's fixtures. |
-| rust-project-backend (note) | Hand-built bodies (`books/routes.rs:577-582,662-667,829-834,1035,1087,1091`, `internal/callbacks.rs`) move to `ok!`/`err!`. `statement-json/update` (`internal/callbacks.rs`) answers `{"status":"ok","saved":[…],"already":[…],"rejected":[{uid,reason}]}` since rpb#1731, and bank-bot reads those three at the top level (bank-bot#1277). bank-bot deploys apart from RPB, so this one follows the three-step order above: RPB sends both `data.*` and the top-level fields, then bank-bot moves, then RPB drops the old fields. `MyError` answers `{code, message, data:{reason}}` instead of `{code, error}` / `{error}`. `bank_bot.rs` reads refusals with one function, `code` + `data.reason`. Init-setting reads `data.job`. Tests load 168pay and bank-bot fixtures. |
+| rust-project-backend (note) | Hand-built bodies (`books/routes.rs:577-582,662-667,829-834,1105,1157,1161`, `internal/callbacks.rs`) move to `ok!`/`err!`. `statement-json/update` (`internal/callbacks.rs`) answers `{"status":"ok","saved":[…],"already":[…],"rejected":[{uid,reason}]}` since rpb#1731, and bank-bot reads those three at the top level (bank-bot#1277). bank-bot deploys apart from RPB, so this one follows the three-step order above: RPB sends both `data.*` and the top-level fields, then bank-bot moves, then RPB drops the old fields. `MyError` answers `{code, message, data:{reason}}` instead of `{code, error}` / `{error}`. `bank_bot.rs` reads refusals with one function, `code` + `data.reason`. Init-setting reads `data.job`. Tests load 168pay and bank-bot fixtures. |
 | aes_channel users (RPB, bank-bot, 168pay) | §2.1, additive. |
 | ScreenLink + bank-bot (board wire) | §2.2: two-way MQTT fixtures. ScreenLink publishes reply fixtures from `mqtt_proto`, and bank-bot publishes request fixtures; each side's tests load the other's. |
-| note-front-end-main (note-fe) | After RPB's fixtures land: one reader in the Dio client (`responder.dart`, `dio_error_util.dart`) branches on `code` + `data.reason` for every route. Remove the per-store fallbacks (`error ?? code`, bare-or-`data`), and show RPB's `data.reason` on a 500 instead of `authentication_error`. |
+| note-front-end-main (note-fe) | After RPB's fixtures land: one reader in the Dio client (`responder.dart`, `dio_error_util.dart`) branches on `code` + `data.reason` for every route, and reads `data.reason ?? error` until RPB drops `error` (§7 step 3). Remove the per-store fallbacks (`error ?? code`, bare-or-`data`), and show RPB's `data.reason` on a 500 instead of `authentication_error`. |
 | jh-api, pos108-*, other lanes | Client-facing APIs move to the envelope one lane at a time, server and apps in the same release (§8 O1 = B; jh-api's D4 is reversed, and the jh-api lane updates `docs/design/architecture-standard.md` §6). Service-to-service calls they make (e.g. to Payment-Platform, identity) follow §2–§5 now. |
 
 ---
