@@ -115,6 +115,25 @@ This is additive: readers of `message` keep working while readers move to `data.
 
 ---
 
+### 2.3 How the envelope maps onto RFC 9457 (Problem Details)
+
+Owner decision S1 = A (§8). The envelope stays the one wire shape. RFC 9457 is the international standard for error bodies, so every non-2xx envelope maps onto it member by member. A tool, a gateway or a log pipeline that speaks RFC 9457 can translate without guessing.
+
+| RFC 9457 member | Envelope | Rule |
+|---|---|---|
+| `status` | `code` | Same integer as the HTTP status (§2). |
+| `title` | `message` | Human text; never parsed (§2 rule 3). |
+| `type` | `data.reason` | The token is the type. Its URI form is `https://errors.108plaza.net/<reason>`, an identifier only: nothing on the wire carries it, and no program fetches it. |
+| `detail` | `data.detail` | Optional; never parsed. |
+| `instance` | the request's trace id | Sent in the `traceparent` / `x-request-id` response header (decision S2), never in the body. |
+
+Rules:
+
+1. **The body stays `application/json` with the §2 envelope.** No service answers `application/problem+json`: that would make a second shape for errors only, against O1.
+2. **Every writer publishes its reason registry** at `contracts/reasons.md`, one row per token: `reason` · the `code`(s) it comes with · what it means · where it is raised (`file:line`). A token missing from the registry fails review, like a missing fixture (§5).
+3. **A token keeps its meaning forever.** A changed cause gets a new token; the old token is retired in the registry, never reused (§2 rule 2).
+4. Log lines carry the same token as `error.type` (decision S3), so the screen, the reader's branch and the log name one cause with one token.
+
 ## 3. Channels: one path per hop
 
 1. **One channel between two services.** If A needs several commands from C through B, B offers one relay channel for that family, not a route per command (owner decision above).
@@ -213,6 +232,8 @@ Owner, 2026-11-25 ~07:35 ICT, in session claude/b5503320, verbatim: *"O1 เอ�
   - **Why B:** the owner's order is one standard for every connection (*"ให้ ใช้ มาตรฐานเดียวกันการเชื่อ มต่อและ สื่อสาร"*). No app is in production yet, so this is the cheapest time to change a shape. An exemption for client-facing APIs would leave a second envelope that every new reader has to learn.
   - **Why one lane at a time:** each lane owns its server and its apps. Moving them together inside one lane keeps every reader and writer in step. Moving every lane at once would make the lanes wait on each other's releases.
   - **Scope:** this covers the envelope (§2 rules 0–5). Field casing stays as §2 rule 6 says: snake_case for service-to-service, and a client-facing API keeps the casing its apps already read.
+- **S1 = A** (owner, 2026-11-25 ~09:19 ICT, in session claude/b5503320, verbatim: *"S1 เอา A"*; first approved with S1–S7 as recommended in `INTERNATIONAL_STANDARDS.md` §3). Keep the envelope and map it onto RFC 9457 (§2.3).
+  - **Why A:** RFC 9457 defines error bodies only. Option B (`application/problem+json` for errors) would leave success on the envelope and errors on another shape, two shapes where O1 says one. The mapping gives the international standard's meaning without a second shape.
 - **O2 = yes.** The fleet rules (`claude-global-rules`, `CLAUDE.md` § 🔌) carry a rule line pointing here, so every reviewer applies §6 without opening this file.
 
 ---
@@ -220,6 +241,7 @@ Owner, 2026-11-25 ~07:35 ICT, in session claude/b5503320, verbatim: *"O1 เอ�
 ## 9. Checklist for a PR that touches a wire
 
 - [ ] Answers are `{code, message, data}`, `code` equals the HTTP status, failures carry `data.reason`.
+- [ ] Every `data.reason` this PR adds is in the writer's `contracts/reasons.md` (§2.3).
 - [ ] Every shape this PR reads from another service is cited by that writer's `file:line` or fixture.
 - [ ] A relay passes answers through unchanged.
 - [ ] New or changed routes have writer fixtures and a writer test.
