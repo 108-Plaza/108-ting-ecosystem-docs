@@ -86,7 +86,7 @@ The owner accepted every recommendation below: *"รับ S1–S7 ทั้ง�
   | `title` | `message` |
   | `type` | `data.reason` (token); `https://errors.108plaza.net/<reason>` as its URI |
   | `detail` | `data.detail` |
-  | `instance` | the request's trace id, sent in the `traceparent` / `x-request-id` response header |
+  | `instance` | the `x-request-id` response header, carrying the S2 trace id (`traceparent` is a request header; the response-side `traceresponse` is only a W3C Trace Context Level 2 draft) |
 
 - **Option B:** switch error bodies to `application/problem+json`. Success then keeps the envelope, so there would be two shapes. The owner's rule is one standard, so this is not recommended.
 
