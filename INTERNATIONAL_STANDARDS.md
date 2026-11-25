@@ -25,7 +25,7 @@ Status:
 | Area | International standard | House standard (this repo) | Status | Gap or action |
 |---|---|---|---|---|
 | HTTP methods and status codes | **RFC 9110** HTTP Semantics | `API_CONNECTION_STANDARD.md` §2: `code` equals the HTTP status; success is any 2xx | Adopted | — |
-| Rate limiting | RFC 9110 `429` + `Retry-After` (§10.2.3); IETF draft *RateLimit header fields* | none | Gap | Every 429 sends `Retry-After`. Adopt the RateLimit headers when the draft becomes an RFC |
+| Rate limiting | **RFC 6585** §4 `429 Too Many Requests` + RFC 9110 `Retry-After` (§10.2.3); IETF draft *RateLimit header fields* | none | Gap | Every 429 sends `Retry-After`. Adopt the RateLimit headers when the draft becomes an RFC |
 | Error body | **RFC 9457** Problem Details for HTTP APIs | `API_CONNECTION_STANDARD.md` §2: `{code, message, data:{reason, detail?}}` | Partial | One envelope covers success and error, which RFC 9457 does not. Decision **S1** |
 | JSON | **RFC 8259** | `API_CONNECTION_STANDARD.md` §2 rule 6: snake_case between services; client APIs keep the casing their apps read | Adopted | — |
 | Time | **RFC 3339** (a profile of ISO 8601), always with an offset | log108 `ts`; wire timestamps | Adopted | Wire timestamps carry the offset, never a naive local time |
@@ -53,7 +53,7 @@ The international model for these qualities is **ISO/IEC 25010** (software produ
 
 | Owner's word | ISO/IEC 25010 characteristic | How it is measured (SLI) | Proposed target (SLO) |
 |---|---|---|---|
-| เสถียร (stable) | Reliability: maturity, availability | share of requests answered without a 5xx, per service, over 30 days | ≥ 99.9% per client-facing API (decision **S7**) |
+| เสถียร (stable) | Reliability: faultlessness ("maturity" before the 2023 edition), availability | share of requests answered without a 5xx, per service, over 30 days | ≥ 99.9% per client-facing API (decision **S7**) |
 | เร็ว (fast) | Performance efficiency: time behaviour | p95 server latency per route template (`http.route`), from the log or metric line | p95 ≤ 300 ms for reads and ≤ 800 ms for writes, outside calls to third parties (**S7**) |
 | น่าเชื่อถือ (reliable) | Reliability: fault tolerance, recoverability | correct results under retry (`Idempotency-Key`), and recovery time after a failure (DORA *time to restore*) | restore in < 1 hour; zero duplicate money movements |
 | ดูแลง่าย แก้ไขง่าย (easy to maintain and fix), meaning **AI and people working together** | Maintainability: analysability, modifiability, testability, reusability (ISO/IEC 25010) | (1) **an agent can go from a symptom to the cause on its own**: the screen's reason equals the `data.reason` the app reads, which equals the log's `error.type`, which leads to one place in the code; (2) every decision has its reason written where the next session reads it; (3) DORA *change lead time* and *change failure rate*; (4) the `software-design` copy count and the architecture ratchet | a fault is diagnosed by an agent from one token, with no human digging; a person's part is one decision or one approval, never investigation; change failure rate < 15%; copy counts only go down |
@@ -138,12 +138,13 @@ Each lane publishes its SLIs from the S3 log lines before the targets are enforc
 
 - A house standard that maps to an international one cites it in its first section.
 - A review that finds a new house-only shape where a published standard applies is a **FAIL** (the same rule as `API_CONNECTION_STANDARD.md` §6).
-- Lanes adopt in their own order. Each lane controller turns the rows marked Partial or Gap into tickets once the owner decides S1–S7.
+- Lanes adopt in their own order. Each lane controller turns the rows marked Partial or Gap into tickets; the owner approved S1–S7 on 2026-11-25.
 
 ## 5. Sources
 
 Each source is named by number and title, so it can be looked up:
 - RFC 9110 (HTTP Semantics, 2022)
+- RFC 6585 (Additional HTTP Status Codes, 2012: `429`)
 - RFC 9457 (Problem Details for HTTP APIs, 2023)
 - RFC 8259 (JSON)
 - RFC 3339 (Date and Time on the Internet)
@@ -163,6 +164,6 @@ Each source is named by number and title, so it can be looked up:
 - SLSA v1.0
 - CycloneDX and SPDX
 - IETF HTTPAPI drafts on `Idempotency-Key` and RateLimit header fields
-- ISO/IEC 25010 (Systems and software Quality Requirements and Evaluation, SQuaRE: product quality model)
+- ISO/IEC 25010:2023 (Systems and software Quality Requirements and Evaluation, SQuaRE: product quality model)
 - Google SRE practice (SLIs, SLOs and error budgets)
 - DORA four key metrics
