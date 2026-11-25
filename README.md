@@ -14,6 +14,7 @@ contracts, and active-work status.
 - [`HELM_DEPLOY_PORTING_GUIDE.md`](HELM_DEPLOY_PORTING_GUIDE.md) — step-by-step porting guide for repos migrating to Helm deployment and eliminating release drift.
 - [`CI_STANDARD_AND_WORKFLOWS.md`](CI_STANDARD_AND_WORKFLOWS.md) — ecosystem CI standard, runner allocation strategy, and workflow catalog for remaining repos.
 - [`PRODUCTION_READINESS_BAR.md`](PRODUCTION_READINESS_BAR.md) — what "ready" means.
+- [`API_CONNECTION_STANDARD.md`](API_CONNECTION_STANDARD.md) — how services talk to each other: one envelope, one channel per hop, writer-owned shapes, contract fixtures, and what happens to work that breaks it.
 - [`VERSIONING_STANDARD.md`](VERSIONING_STANDARD.md) — what is actually running in
   front of a customer: the `1.MINOR.PATCH` number, the channel, and the runtime
   surface every app must expose. Binding on every app.

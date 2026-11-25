@@ -1,0 +1,219 @@
+# 108 Ting Ecosystem — API Connection Standard
+
+**Status:** draft for the lane controllers' comment. It becomes binding on every service and every lane when it merges.
+
+**Owner's order, 2026-11-24 ~17:1x–17:4x ICT** (typed in the 108Pay session, verbatim and in order):
+*"เราต้องมีมาตรฐานในการสื้อสาร เชื่อมต่อ"* · *"ไม่ใช่ ใครจะสร้างอะไรก็สร้างไปเรื่อย"* ·
+*"กำหนดมาตรฐานกลาง ในการ สื่อสาร เชื่อมต่อ"* · *"ประสานงาน กัน"* · *"สร้าง"* ·
+*"คู่มือ api ในการ สื่อสารและเชื่อม ต่อ"* · *"แจ้ง ทุก ผู้คุม เลน"* · *"ให้ ทราบ"* ·
+*"ให้ ใช้ มาตรฐานเดียวกันการเชื่อ มต่อและ สื่อสาร"* · *"ใคร ดื้อจะให้ไปอยู่ นอกบ้าน ห้ามกิน ห้ามนอน"* · *"จะทำบทลงโทษ"*.
+
+Related owner decision, the same afternoon (note-front-end-main#525 comment 7127876796):
+*"ทำไม ต้อง ทำหลายช่องทาง"* · *"ให้ ติดต่อ ช่องทางเดียวกัน"* · *"เราต้องใข้ ช่องเดียวกันในการติด ต่อสือสาร"*.
+
+Companion to [`VERSIONING_STANDARD.md`](VERSIONING_STANDARD.md) (what is running) and
+[`ENGINEERING_STANDARD_AI_AUTHORED.md`](ENGINEERING_STANDARD_AI_AUTHORED.md) (how software is authored).
+This one answers: **when one service talks to another, what goes on the wire, and who decides?**
+
+---
+
+## 1. Why this exists
+
+### 1.1 The failure that started it (2026-11-24)
+
+Note 2's per-book connection test runs RPB → 168pay → bank-bot. Its first live run (~16:4x ICT)
+failed at hop 2 with *"168pay returned an unreadable board check"*. Nothing was down.
+Each of the three services read a different answer shape:
+
+| Who | What it did | Where |
+|---|---|---|
+| bank-bot (writer) | answered `{"code":200,"message":"checked","data":{"steps":[…],"boards":[…]}}` | bank-bot `src/session_routes/board_check.rs` `check_with` |
+| 168pay (relay) | looked for `steps` at the **top level**, found none, replaced the answer with its own `bank_bot_bad_answer` | 168pay `745fc61` `api/src/gateway/door.rs` `board_check` |
+| RPB (reader) | read `/data/steps`, which **matches bank-bot's real answer**, so its parse was right; it found nothing only because 168pay had replaced the answer. Do not "fix" RPB to accept both shapes (RPB lane, PR 30 issuecomment-7128417811). | rust-project-backend `projects/note-backend-v2/src/books/board_check_route.rs:299-314` |
+
+**The cause:** 168pay's shape came from a ticket comment (note-front-end-main#525 comment 7121114328)
+that described bank-bot's answer from memory, and described it wrongly. Nobody read the code that
+writes the answer. Fixed by 168pay PR 254 (`568f73c`), which makes the route a plain relay.
+
+### 1.2 It is not one route: five envelopes today
+
+Measured on each default branch, 2026-11-24:
+
+| Service | Success | Refusal | Machine reason is in |
+|---|---|---|---|
+| bank-bot | `{code, message, data}` (`src/session_routes/dto.rs:96-102`) | same envelope, `data` absent or `{reason}` | `data.reason` on some refusals; `message` on others (`handlers.rs:125-129`); `/screenlink/program` answers `{"error": …}` (`program_preview.rs:520`) |
+| 168pay door | bank-bot's body relayed, or its own `{code, message, data}` | after the seal opens: `{"message": "<token>"}`, **no `code`** (`door.rs:120,180,309`) | `message` |
+| 168pay general API | — | `{"status":"error","code":"<STRING>","message":…}` (`api/src/error.rs:36-40`) | `code` (a string) |
+| RPB | `{code, message, data}` (`core/utils/src/response.rs:15-24`, `ok!`) | `{"code":N,"error":…}` or `{"error":…}` with no `code` (`core/utils/src/my_error.rs:184-196`) | `error` |
+| jh-api | handler-specific | `{"error":"<tag>","message":…}` (`crates/infra/src/response.rs`, `App108ErrorType`) | `error` |
+
+Readers already disagree with writers inside one call chain:
+
+- RPB's `start_service_error` and `balance_order_error` treat a body as a refusal only when it has a numeric `code` (`contrib/bank_bot/src/bank_bot.rs:662-669, 699-706`). 168pay's own refusals have none, so they fall through as raw text.
+  In the same file, `board_check_error` reads `message` and `/data/reason` without needing `code` (`:738-756`). One body, two readings.
+- bank-bot puts `login_already_running` in `message` only (`board_unlock.rs:170`). RPB reads the reason from `/data/reason` (`bank_bot.rs:707-711`), so `reason` is `None` on the real path. RPB's test mocks `data.reason` (`bank_bot.rs:2118`), so no test can catch it.
+- RPB reads bank-bot's init-setting job at top-level `/job` (`bank_bot.rs:255`) but the unlock job at `/data/unlock_id` (`:337`).
+
+- Note 2 FE (note-front-end-main) has one Dio client, but its readers try several shapes because RPB answers several:
+  - success needs `code == 200` (`lib/data/network/responder.dart:4`). RPB's bare 200 bodies (`books/routes.rs:1105,1157`) therefore arrive on the failure branch.
+  - `BoardCheckResult.fromAnswer` accepts `{steps,boards}` both bare and inside `data` (`lib/models/book/board_check.dart:61-67`).
+  - errors are read from `error`, `code` or `reason`, depending on the store method (`agent_book_store.dart:937,1569-1587,1725`).
+  - every 500 shows `authentication_error`, whatever RPB sent (`lib/utils/dio/dio_error_util.dart:83-84`).
+
+Each of these is a connection test waiting to fail the way §1.1 did.
+
+---
+
+## 2. The envelope: one shape for every HTTP answer
+
+Every HTTP answer between services, and from a backend to its apps, is this JSON object:
+
+```json
+{ "code": 200, "message": "checked", "data": { } }
+```
+
+| Field | Rule |
+|---|---|
+| `code` | **Always present.** An integer equal to the HTTP status of the same response. |
+| `message` | Always present. Human text; never parsed by a program. |
+| `data` | The payload on success (`object`, `array` or `null`). On failure, an object with `reason`. |
+| `data.reason` | **Required on every non-2xx answer.** A `snake_case` token, stable and documented by the writer. It is the only field a program may branch on. |
+| `data.detail` | Optional on failure. The measured fact behind it, for logs and screens; never parsed. |
+
+Rules:
+
+0. **Success is any 2xx** (200, 201, 202 …), never "`code == 200`". A reader that accepts only 200 fails on every 202 (`responder.dart:4` vs RPB's 202 `init_setting_started`).
+1. **Every non-2xx answer carries `data.reason`, 5xx included.** A 500 answers e.g. `{"code":500,"message":"…","data":{"reason":"internal_error"}}`, so a screen can name it instead of guessing.
+2. **One reason token per cause, at every hop.** A hop that relays a refusal keeps the writer's token. A hop that refuses on its own uses its own token, and never reuses another hop's token for a different cause.
+3. **Programs branch on `code` + `data.reason` and nothing else.** Never on `message`, never on a field another route happens to put at the top level.
+   A `reason` inside a 2xx payload, e.g. a failed hop in `data.steps[].reason`, is **content**, not a refusal: the request succeeded, and the payload reports what it found.
+4. **A new field goes inside `data`.** The top level has exactly `code`, `message` and `data`.
+5. **Success payloads are objects named by meaning**, e.g. `data.unlock_id` and `data.job`, never a bare top-level `job`.
+6. **Wire field names are `snake_case`** for service-to-service bodies (bank-bot, 168pay, RPB already are). A client-facing API that already ships `camelCase` to an app (jh-api, pos) keeps its casing; it still moves to the envelope (§8 O1). Money keeps the ecosystem rule: integer satang, or a decimal **string**, never a float.
+
+### 2.1 Channel-layer refusals (the AES seal)
+
+A refusal before a seal opens (`malformed`, `unknown_peer`, `invalid_seal`, `stale`, `replay`) is written by the channel crate, not by a handler. Today it is `{"code":N,"message":"<token>"}` (rust-project-backend `core/aes_channel`, bank-bot `src/peer_seal.rs:153-156`, 168pay `door.rs:63-72`). It becomes `{"code":N,"message":"<token>","data":{"reason":"<token>"}}`.
+This is additive: readers of `message` keep working while readers move to `data.reason`.
+
+### 2.2 Where the envelope does not apply
+
+- **The board wire (MQTT, bank-bot ⇄ ScreenLink boards)** has its own versioned frame. The board side writes and parses it with `ScreenLink/esp32s3-rs/mqtt_proto` (ScreenLink sub-controller review, PR 30 issuecomment-7128039922):
+  - request: `{v:1, id, op, exp, body:{…}}`. `body` must be an object; `id` is 32 hex (`lib.rs:95` `parse_request`).
+  - error: `{v:1, id, ok:false, error:"<snake_case>", detail?, now_ms?}`. `now_ms` is set on `expired` (`:319` `ErrorReply`, `:421` `reply_error`).
+  - answer: the answer's own fields plus `v:1` and the echoed `id`, written last so they cannot be overwritten (`:406` `reply_answer`). `reply_answer` itself adds no `ok`.
+  - size: a reply is capped at 32 KiB (`:34` `MAX_REPLY_BYTES`). Over the cap, `reply_look` drops optional fields first and marks the reply `truncated:true`; `reply_answer` goes straight to the error `reply_too_large`. Either way, never a cut-off body.
+  - per-app filters come from the caller's config inside the request `body`. If one is absent, the documented default applies and the reply is byte-identical to before. If it is malformed, the board answers a named error key and never guesses (`:377` `read_look_min_h`, owner 2026-11-24, ScreenLink#422).
+
+  **bank-bot does not use `mqtt_proto`.** It talks through `rumqttc`, building requests and parsing replies by hand (`src/banks/screenlink/mqtt/client.rs`, `board_orders.rs`). So the two ends can drift, and §5 applies in both directions:
+  - ScreenLink owns the reply fixtures.
+  - bank-bot owns the request fixtures. `docs/design/fixtures/board-program.json` is the first one.
+  - Each side's tests load the other side's fixtures.
+
+  Lifecycle rules (live vs. retained replay) are in bank-bot `docs/design/wd-repair.md` §4.2 step 8. **Do not wrap this frame in the HTTP envelope.**
+- Board HTTP (`/status`, OTA) on the Pi LAN is local diagnostics, not a service contract.
+
+---
+
+## 3. Channels: one path per hop
+
+1. **One channel between two services.** If A needs several commands from C through B, B offers one relay channel for that family, not a route per command (owner decision above).
+2. **A relay does not read the answer.** It checks only what it owns, then forwards and returns the answer status and body unchanged. For 168pay's board channel, what it owns is three checks:
+   - the seal;
+   - is this book registered to the caller (`403`, `data.reason = account_not_yours`);
+   - can the next hop be reached (`502`, `data.reason = bank_error`).
+   
+   A relay that rewrites an answer is a parser, and a parser is a second writer of a shape it does not own. That is the §1.1 failure.
+3. **A relay that must add something** (an id mapping, a job record) does it in a route that is not the pass-through channel, and documents it in its design doc as its own contract.
+4. **A reader builds its own hops.** In a multi-hop check, each service reports only its own hop; the caller assembles the list (RPB does this in `board_check_route.rs:345`).
+
+---
+
+## 4. Who owns a shape
+
+1. **The service that writes an answer owns its shape.** Readers adapt to it, or ask the writer's lane to change it.
+2. **A shape is cited by the writer's `file:line`**, a fixture (§5) or the writer's design doc. **Never by a ticket comment, a chat message or memory.** A ticket that describes another service's wire must link the writer's code. A reviewer who finds a shape cited from a comment marks it as a "must fix".
+3. **Changing a shape:**
+   - First, change the writer's fixture, in the writer's repo, in the same PR as the code.
+   - Then tell every reader's lane controller, with the PR link.
+   - Remove the old shape only after every reader has merged.
+   
+   Additive changes (a new field inside `data`) need no wait.
+4. **A reason token is never reused** for a different meaning. Retire it, add a new one.
+
+---
+
+## 5. Contract fixtures: the test that would have caught §1.1
+
+For every route another service calls:
+
+1. **The writer keeps one fixture file per answer case** in its repo, at `contracts/<route>/<case>.json` (e.g. `contracts/services-board-check/ok.json`, `.../login-running.json`). The file is the real body, with the HTTP status in `code`.
+2. **The writer has a test that runs the real handler and compares its output with each fixture.** If the handler changes shape, the writer's own CI goes red first.
+3. **Every reader keeps a copy of the writer's fixtures**, at `contracts/upstream/<writer-repo>/…`. The first line of each copy names the writer's commit it came from. The reader's fakes **load these files**; they are never hand-written JSON. A reader test that mocks a body by hand for another service's route fails review.
+4. **A CI job in the reader compares its copies with the writer's `main`** (`gh api repos/108-Plaza/<writer>/contents/contracts/...`) and goes red on any difference. When the writer changes shape, every reader goes red the same day, not on the first live run.
+5. **Relays carry fixtures for both sides they touch**, and test that a writer fixture passes through byte-for-byte equal.
+
+jh-api already has the pattern for its own wire: `crates/error/src/wire_status_snapshot.txt` (pinned by the test `wire_json_and_status_match_the_pre_sort_snapshot` at `crates/error/src/lib.rs:2779`) and the `crates/contract_tests` crate. Follow it.
+
+---
+
+## 6. Enforcement: what happens to work that breaks this
+
+Owner: *"ใคร ดื้อจะให้ไปอยู่ นอกบ้าน ห้ามกิน ห้ามนอน"* · *"จะทำบทลงโทษ"*.
+
+| Breach | What happens |
+|---|---|
+| A PR adds or changes a wire shape outside §2, or rewrites an answer in a relay (§3), or cites a shape from a comment (§4.2) | Reviewer verdict **FAIL**. It cannot merge. There is no "PASS + follow-up" for this. **Exception:** a PR that follows §7's three-step order may keep an old field (e.g. a top-level `error` or `job`) beside the envelope, as long as it names the step it is on and the ticket for the step that drops the old field. |
+| A PR adds a route another service calls, with no writer fixture and no writer test (§5.1–5.2) | **FAIL**. |
+| A reader test fakes another service's body by hand instead of loading the fixture (§5.3) | **FAIL**. |
+| A queue worker's PR is FAILed for any row above | One strike under the queue's three-strike rule (skill `tq-worker` § Non-compliance): a warning, then the ticket goes back to `ready`, then removal from the queue and the owner notified. Every strike is recorded on the ticket. |
+| A session or lane keeps a non-standard shape after the change ticket for its repo (§7) was dispatched to it | The lane controller reports it on the lane's notice issue, and the owner is notified. |
+
+A reviewer who PASSes a PR with a breach that §6 lists has made the same breach.
+
+---
+
+## 7. Bringing existing services in line
+
+We are in development (fleet rules: no app is in production yet). Changing a wire shape is cheapest now, so existing routes are converged, not grandfathered. Each lane controller turns its row into tickets. The writer's fixture lands **before** any reader changes.
+
+**Order for a shape that installed apps already read** (note-fe comment on PR 30, issuecomment-7128039078). Installed Note 2 builds read RPB's top-level `error`; they break on the day it disappears.
+1. **The writer adds the new field and keeps the old one.** RPB sends `data.reason` and keeps `error` with the same token. This step is additive.
+2. **Readers move to the new field first, with the old one as fallback.** The app reads `data.reason ?? error`, and ships.
+3. **The writer drops the old field** only after every reader's release that reads the new one is installed. The reader's lane controller confirms that, in writing, on the writer's ticket.
+
+Service-to-service readers that deploy together with the writer, e.g. 168pay and RPB, skip the wait: step 3 follows as soon as they are deployed.
+
+| Repo (lane) | Change |
+|---|---|
+| bank-bot (bank) | Every refusal carries `data.reason`. Today `login_already_running`, `user_or_account is required` and the like are in `message` only, with `data` absent: `board_unlock.rs` `reply`, `board_check.rs` `error_reply`. The init-setting `202 {code, job}` moves `job` into `data.job` (`board_init.rs:151`), first sent in both places, before RPB's reader moves. `/screenlink/program` answers the envelope for both the refusal (`{"error":…}`) and the success (today a bare `Preview`). Add `contracts/` fixtures for every route 168pay relays. (bank lane review, PR 30 issuecomment-7128042183.) |
+| 168pay (168pay) | Door refusals become the full envelope (`code` + `data.reason`; `message` kept). `AppError` (`api/src/error.rs`) moves from `{status, code:"STRING"}` to the envelope, with the old string as `data.reason`. Board routes fold into one pass-through relay: one allowlist table, one handler and one door function, mounted only on the table's paths, so an unknown path still answers 404 (168pay#256). Relay tests load bank-bot's fixtures. |
+| rust-project-backend (note) | Hand-built bodies (`books/routes.rs:577-582,662-667,829-834,1105,1157,1161`, `internal/callbacks.rs`) move to `ok!`/`err!`. `statement-json/update` (`internal/callbacks.rs`) answers `{"status":"ok","saved":[…],"already":[…],"rejected":[{uid,reason}]}` since rpb#1731, and bank-bot reads those three at the top level (bank-bot#1277). bank-bot deploys apart from RPB, so this one follows the three-step order above: RPB sends both `data.*` and the top-level fields, then bank-bot moves, then RPB drops the old fields. `MyError` answers `{code, message, data:{reason}}` instead of `{code, error}` / `{error}`. `bank_bot.rs` reads refusals with one function, `code` + `data.reason`. Init-setting reads `data.job`. Tests load 168pay and bank-bot fixtures. |
+| aes_channel users (RPB, bank-bot, 168pay) | §2.1, additive. |
+| ScreenLink + bank-bot (board wire) | §2.2: two-way MQTT fixtures. ScreenLink publishes reply fixtures from `mqtt_proto`, and bank-bot publishes request fixtures; each side's tests load the other's. |
+| note-front-end-main (note-fe) | After RPB's fixtures land: one reader in the Dio client (`responder.dart`, `dio_error_util.dart`) branches on `code` + `data.reason` for every route, and reads `data.reason ?? error` until RPB drops `error` (§7 step 3). Remove the per-store fallbacks (`error ?? code`, bare-or-`data`), and show RPB's `data.reason` on a 500 instead of `authentication_error`. |
+| jh-api, pos108-*, other lanes | Client-facing APIs move to the envelope one lane at a time, server and apps in the same release (§8 O1 = B; jh-api's D4 is reversed, and the jh-api lane updates `docs/design/architecture-standard.md` §6). Service-to-service calls they make (e.g. to Payment-Platform, identity) follow §2–§5 now. |
+
+---
+
+## 8. Owner decisions
+
+Owner, 2026-11-25 ~07:35 ICT, in session claude/b5503320, verbatim: *"O1 เอา B ทีละเลน O2 ใส่กฎกลางเลย"*.
+
+- **O1 = B, one lane at a time.** Every API moves to the §2 envelope, client-facing APIs included. jh-api's decision D4 (2026-11-23, keep `{error, message}` because both Flutter apps read it) is reversed.
+  - **How:** one lane at a time. Each lane changes its server and its apps in the same release, following the §7 order: add the new field first, move readers, then drop the old one.
+  - **Why B:** the owner's order is one standard for every connection (*"ให้ ใช้ มาตรฐานเดียวกันการเชื่อ มต่อและ สื่อสาร"*). No app is in production yet, so this is the cheapest time to change a shape. An exemption for client-facing APIs would leave a second envelope that every new reader has to learn.
+  - **Why one lane at a time:** each lane owns its server and its apps. Moving them together inside one lane keeps every reader and writer in step. Moving every lane at once would make the lanes wait on each other's releases.
+  - **Scope:** this covers the envelope (§2 rules 0–5). Field casing stays as §2 rule 6 says: snake_case for service-to-service, and a client-facing API keeps the casing its apps already read.
+- **O2 = yes.** The fleet rules (`claude-global-rules`, `CLAUDE.md` § 🔌) carry a rule line pointing here, so every reviewer applies §6 without opening this file.
+
+---
+
+## 9. Checklist for a PR that touches a wire
+
+- [ ] Answers are `{code, message, data}`, `code` equals the HTTP status, failures carry `data.reason`.
+- [ ] Every shape this PR reads from another service is cited by that writer's `file:line` or fixture.
+- [ ] A relay passes answers through unchanged.
+- [ ] New or changed routes have writer fixtures and a writer test.
+- [ ] Reader fakes load the writer's fixtures.
+- [ ] Every reader lane was told about a changed shape, with the PR link.
