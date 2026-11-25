@@ -6,6 +6,7 @@ contracts, and active-work status.
 
 ## Standards
 
+- [`INTERNATIONAL_STANDARDS.md`](INTERNATIONAL_STANDARDS.md) — the map from every house standard to the international one it implements (RFC 9110/9457, W3C Trace Context, OpenTelemetry, OpenAPI 3.1, ISO/IEC 25010, OWASP ASVS, WCAG 2.2), the quality targets (SLOs), and decisions S1–S7.
 - [`ENGINEERING_STANDARD_AI_AUTHORED.md`](ENGINEERING_STANDARD_AI_AUTHORED.md) —
   how we structure and gate code now that agents write it and at most two people
   supervise. Seven rules, each with the incident that produced it, plus the
