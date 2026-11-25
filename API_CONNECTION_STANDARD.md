@@ -113,8 +113,6 @@ This is additive: readers of `message` keep working while readers move to `data.
   Lifecycle rules (live vs. retained replay) are in bank-bot `docs/design/wd-repair.md` §4.2 step 8. **Do not wrap this frame in the HTTP envelope.**
 - Board HTTP (`/status`, OTA) on the Pi LAN is local diagnostics, not a service contract.
 
----
-
 ### 2.3 How the envelope maps onto RFC 9457 (Problem Details)
 
 Owner decision S1 = A (§8). The envelope stays the one wire shape. RFC 9457 is the international standard for error bodies, so every non-2xx envelope maps onto it member by member. A tool, a gateway or a log pipeline that speaks RFC 9457 can translate without guessing.
@@ -122,17 +120,19 @@ Owner decision S1 = A (§8). The envelope stays the one wire shape. RFC 9457 is 
 | RFC 9457 member | Envelope | Rule |
 |---|---|---|
 | `status` | `code` | Same integer as the HTTP status (§2). |
-| `title` | `message` | Human text; never parsed (§2 rule 3). |
+| `title` | `message` | Human text; never parsed (§2 rule 3). RFC 9457 wants `title` fixed per problem type while `message` varies per answer, so a translator takes `title` from the registry's meaning, not from `message`. |
 | `type` | `data.reason` | The token is the type. Its URI form is `https://errors.108plaza.net/<reason>`, an identifier only: nothing on the wire carries it, and no program fetches it. |
 | `detail` | `data.detail` | Optional; never parsed. |
-| `instance` | the request's trace id | Sent in the `traceparent` / `x-request-id` response header (decision S2), never in the body. |
+| `instance` | the request's trace id | Sent in the `x-request-id` response header, carrying the S2 trace id; never in the body. |
 
 Rules:
 
 1. **The body stays `application/json` with the §2 envelope.** No service answers `application/problem+json`: that would make a second shape for errors only, against O1.
-2. **Every writer publishes its reason registry** in `contracts/`, one entry per token: `reason` · the `code`(s) it comes with · what it means · where it is raised (`file:line` or the code symbol). Prefer a file **generated from the code** (e.g. jh-api `contracts/error-reasons.json`, 619 reasons, jh-api PR 2272), so it cannot drift; a hand-kept `contracts/reasons.md` table is the fallback. A token missing from the registry fails review, like a missing fixture (§5).
-3. **A token keeps its meaning forever.** A changed cause gets a new token; the old token is retired in the registry, never reused (§2 rule 2).
+2. **Every writer publishes its reason registry** in `contracts/`, one entry per token: `reason` · the `code`(s) it comes with · what it means · where it is raised (`file:line` or the code symbol) · `retired` (date, or empty). A hand-kept file is a markdown table with exactly those five columns. Tokens the shared channel crate writes (§2.1) are registered once, in that crate's repo. Prefer a file **generated from the code** (e.g. jh-api `contracts/error-reasons.json`, 619 reasons, jh-api PR 2272), so it cannot drift; a hand-kept `contracts/reasons.md` table is the fallback. A `data.reason` a PR adds that is missing from the registry is a FAIL (§6).
+3. **A token keeps its meaning forever.** A changed cause gets a new token; the old token is marked retired in the registry, never reused (§4.4).
 4. Log lines carry the same token as `error.type` (decision S3), so the screen, the reader's branch and the log name one cause with one token.
+
+---
 
 ## 3. Channels: one path per hop
 
@@ -185,6 +185,7 @@ Owner: *"ใคร ดื้อจะให้ไปอยู่ นอกบ้
 | A PR adds or changes a wire shape outside §2, or rewrites an answer in a relay (§3), or cites a shape from a comment (§4.2) | Reviewer verdict **FAIL**. It cannot merge. There is no "PASS + follow-up" for this. **Exception:** a PR that follows one of §7's two transition paths is not a breach, as long as it names the path and step it is on and the ticket for the step that ends the old shape. On the first path it keeps an old field (e.g. a top-level `error` or `job`) beside the envelope; on the second it serves the old shape to readers that do not send `X-Envelope-Capable: 1`. |
 | A PR adds a route another service calls, with no writer fixture and no writer test (§5.1–5.2) | **FAIL**. |
 | A reader test fakes another service's body by hand instead of loading the fixture (§5.3) | **FAIL**. |
+| A PR adds a `data.reason` that is missing from the writer's reason registry (§2.3 rule 2) | **FAIL**. Tokens that existed before the PR are backfilled by the lane's §7 ticket, not by this rule. |
 | A queue worker's PR is FAILed for any row above | One strike under the queue's three-strike rule (skill `tq-worker` § Non-compliance): a warning, then the ticket goes back to `ready`, then removal from the queue and the owner notified. Every strike is recorded on the ticket. |
 | A session or lane keeps a non-standard shape after the change ticket for its repo (§7) was dispatched to it | The lane controller reports it on the lane's notice issue, and the owner is notified. |
 
