@@ -163,7 +163,7 @@ Owner: *"ใคร ดื้อจะให้ไปอยู่ นอกบ้
 
 | Breach | What happens |
 |---|---|
-| A PR adds or changes a wire shape outside §2, or rewrites an answer in a relay (§3), or cites a shape from a comment (§4.2) | Reviewer verdict **FAIL**. It cannot merge. There is no "PASS + follow-up" for this. **Exception:** a PR that follows §7's three-step order may keep an old field (e.g. a top-level `error` or `job`) beside the envelope, as long as it names the step it is on and the ticket for the step that drops the old field. |
+| A PR adds or changes a wire shape outside §2, or rewrites an answer in a relay (§3), or cites a shape from a comment (§4.2) | Reviewer verdict **FAIL**. It cannot merge. There is no "PASS + follow-up" for this. **Exception:** a PR that follows one of §7's two transition paths is not a breach, as long as it names the step it is on and the ticket for the step that ends the old shape. On the first path it keeps an old field (e.g. a top-level `error` or `job`) beside the envelope; on the second it serves the old shape to readers that do not send `X-Envelope-Capable: 1`. |
 | A PR adds a route another service calls, with no writer fixture and no writer test (§5.1–5.2) | **FAIL**. |
 | A reader test fakes another service's body by hand instead of loading the fixture (§5.3) | **FAIL**. |
 | A queue worker's PR is FAILed for any row above | One strike under the queue's three-strike rule (skill `tq-worker` § Non-compliance): a warning, then the ticket goes back to `ready`, then removal from the queue and the owner notified. Every strike is recorded on the ticket. |
@@ -183,6 +183,14 @@ We are in development (fleet rules: no app is in production yet). Changing a wir
 3. **The writer drops the old field** only after every reader's release that reads the new one is installed. The reader's lane controller confirms that, in writing, on the writer's ticket.
 
 Service-to-service readers that deploy together with the writer, e.g. 168pay and RPB, skip the wait: step 3 follows as soon as they are deployed.
+
+**Second allowed path: the reader opts in by header** (owner, 2026-11-25, *"Add it"*, after jh-api PR 2270).
+Use it when adding fields beside the old ones would change what an old field means to old readers. jh-api is the case: its error `message` already carries structured payloads.
+1. **The writer answers the envelope only to readers that ask for it** with the request header `X-Envelope-Capable: 1`. Every other reader gets the old shape, unchanged. The translation sits in one place (a middleware), never per route.
+2. **Readers send the header** and read the envelope, then ship.
+3. **The writer makes the envelope the only shape** and stops reading the header, once every reader's release that sends it is installed. The reader's lane controller confirms that, in writing, on the writer's ticket.
+
+The header name is fixed fleet-wide, so a reader written once works against every writer that uses this path.
 
 | Repo (lane) | Change |
 |---|---|
