@@ -163,7 +163,7 @@ Owner: *"ใคร ดื้อจะให้ไปอยู่ นอกบ้
 
 | Breach | What happens |
 |---|---|
-| A PR adds or changes a wire shape outside §2, or rewrites an answer in a relay (§3), or cites a shape from a comment (§4.2) | Reviewer verdict **FAIL**. It cannot merge. There is no "PASS + follow-up" for this. **Exception:** a PR that follows one of §7's two transition paths is not a breach, as long as it names the step it is on and the ticket for the step that ends the old shape. On the first path it keeps an old field (e.g. a top-level `error` or `job`) beside the envelope; on the second it serves the old shape to readers that do not send `X-Envelope-Capable: 1`. |
+| A PR adds or changes a wire shape outside §2, or rewrites an answer in a relay (§3), or cites a shape from a comment (§4.2) | Reviewer verdict **FAIL**. It cannot merge. There is no "PASS + follow-up" for this. **Exception:** a PR that follows one of §7's two transition paths is not a breach, as long as it names the path and step it is on and the ticket for the step that ends the old shape. On the first path it keeps an old field (e.g. a top-level `error` or `job`) beside the envelope; on the second it serves the old shape to readers that do not send `X-Envelope-Capable: 1`. |
 | A PR adds a route another service calls, with no writer fixture and no writer test (§5.1–5.2) | **FAIL**. |
 | A reader test fakes another service's body by hand instead of loading the fixture (§5.3) | **FAIL**. |
 | A queue worker's PR is FAILed for any row above | One strike under the queue's three-strike rule (skill `tq-worker` § Non-compliance): a warning, then the ticket goes back to `ready`, then removal from the queue and the owner notified. Every strike is recorded on the ticket. |
@@ -182,7 +182,7 @@ We are in development (fleet rules: no app is in production yet). Changing a wir
 2. **Readers move to the new field first, with the old one as fallback.** The app reads `data.reason ?? error`, and ships.
 3. **The writer drops the old field** only after every reader's release that reads the new one is installed. The reader's lane controller confirms that, in writing, on the writer's ticket.
 
-Service-to-service readers that deploy together with the writer, e.g. 168pay and RPB, skip the wait: step 3 follows as soon as they are deployed.
+Service-to-service readers that deploy together with the writer, e.g. 168pay and RPB, skip the wait on either path: step 3 follows as soon as they are deployed.
 
 **Second allowed path: the reader opts in by header** (owner, 2026-11-25, *"Add it"*, after jh-api PR 2270).
 Use it when adding fields beside the old ones would change what an old field means to old readers. jh-api is the case: its error `message` already carries structured payloads.
@@ -200,7 +200,7 @@ The header name is fixed fleet-wide, so a reader written once works against ever
 | aes_channel users (RPB, bank-bot, 168pay) | §2.1, additive. |
 | ScreenLink + bank-bot (board wire) | §2.2: two-way MQTT fixtures. ScreenLink publishes reply fixtures from `mqtt_proto`, and bank-bot publishes request fixtures; each side's tests load the other's. |
 | note-front-end-main (note-fe) | After RPB's fixtures land: one reader in the Dio client (`responder.dart`, `dio_error_util.dart`) branches on `code` + `data.reason` for every route, and reads `data.reason ?? error` until RPB drops `error` (§7 step 3). Remove the per-store fallbacks (`error ?? code`, bare-or-`data`), and show RPB's `data.reason` on a 500 instead of `authentication_error`. |
-| jh-api, pos108-*, other lanes | Client-facing APIs move to the envelope one lane at a time, server and apps in the same release (§8 O1 = B; jh-api's D4 is reversed, and the jh-api lane updates `docs/design/architecture-standard.md` §6). Service-to-service calls they make (e.g. to Payment-Platform, identity) follow §2–§5 now. |
+| jh-api, pos108-*, other lanes | Client-facing APIs move to the envelope one lane at a time, the lane moving its server and its apps together by either §7 path (§8 O1 = B; jh-api uses path 2, jh-api PR 2270; jh-api's D4 is reversed, and the jh-api lane updates `docs/design/architecture-standard.md` §6). Service-to-service calls they make (e.g. to Payment-Platform, identity) follow §2–§5 now. |
 
 ---
 
@@ -209,7 +209,7 @@ The header name is fixed fleet-wide, so a reader written once works against ever
 Owner, 2026-11-25 ~07:35 ICT, in session claude/b5503320, verbatim: *"O1 เอา B ทีละเลน O2 ใส่กฎกลางเลย"*.
 
 - **O1 = B, one lane at a time.** Every API moves to the §2 envelope, client-facing APIs included. jh-api's decision D4 (2026-11-23, keep `{error, message}` because both Flutter apps read it) is reversed.
-  - **How:** one lane at a time. Each lane changes its server and its apps in the same release, following the §7 order: add the new field first, move readers, then drop the old one.
+  - **How:** one lane at a time. Each lane moves its server and its apps together by one of the two §7 paths: path 1 adds the new field beside the old one; path 2 serves the envelope to readers that send `X-Envelope-Capable: 1`. Either way readers move next, and the old shape ends last.
   - **Why B:** the owner's order is one standard for every connection (*"ให้ ใช้ มาตรฐานเดียวกันการเชื่อ มต่อและ สื่อสาร"*). No app is in production yet, so this is the cheapest time to change a shape. An exemption for client-facing APIs would leave a second envelope that every new reader has to learn.
   - **Why one lane at a time:** each lane owns its server and its apps. Moving them together inside one lane keeps every reader and writer in step. Moving every lane at once would make the lanes wait on each other's releases.
   - **Scope:** this covers the envelope (§2 rules 0–5). Field casing stays as §2 rule 6 says: snake_case for service-to-service, and a client-facing API keeps the casing its apps already read.
