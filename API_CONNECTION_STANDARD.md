@@ -89,7 +89,7 @@ Rules:
    A `reason` inside a 2xx payload, e.g. a failed hop in `data.steps[].reason`, is **content**, not a refusal: the request succeeded, and the payload reports what it found.
 4. **A new field goes inside `data`.** The top level has exactly `code`, `message` and `data`.
 5. **Success payloads are objects named by meaning**, e.g. `data.unlock_id` and `data.job`, never a bare top-level `job`.
-6. **Wire field names are `snake_case`** for service-to-service bodies (bank-bot, 168pay, RPB already are). A client-facing API that already ships `camelCase` to an app (jh-api, pos) keeps it, unless decision O1 says otherwise. Money keeps the ecosystem rule: integer satang, or a decimal **string**, never a float.
+6. **Wire field names are `snake_case`** for service-to-service bodies (bank-bot, 168pay, RPB already are). A client-facing API that already ships `camelCase` to an app (jh-api, pos) keeps its casing; it still moves to the envelope (§8 O1). Money keeps the ecosystem rule: integer satang, or a decimal **string**, never a float.
 
 ### 2.1 Channel-layer refusals (the AES seal)
 
@@ -187,22 +187,25 @@ Service-to-service readers that deploy together with the writer, e.g. 168pay and
 | Repo (lane) | Change |
 |---|---|
 | bank-bot (bank) | Every refusal carries `data.reason`. Today `login_already_running`, `user_or_account is required` and the like are in `message` only, with `data` absent: `board_unlock.rs` `reply`, `board_check.rs` `error_reply`. The init-setting `202 {code, job}` moves `job` into `data.job` (`board_init.rs:151`), first sent in both places, before RPB's reader moves. `/screenlink/program` answers the envelope for both the refusal (`{"error":…}`) and the success (today a bare `Preview`). Add `contracts/` fixtures for every route 168pay relays. (bank lane review, PR 30 issuecomment-7128042183.) |
-| 168pay (168pay) | Door refusals become the full envelope (`code` + `data.reason`; `message` kept). `AppError` (`api/src/error.rs`) moves from `{status, code:"STRING"}` to the envelope, with the old string as `data.reason`. Board routes fold into one pass-through channel (`POST /api/bank/services/board/{*rest}` + allowlist table; plan from the 168pay relay survey, 2026-11-24). Relay tests load bank-bot's fixtures. |
+| 168pay (168pay) | Door refusals become the full envelope (`code` + `data.reason`; `message` kept). `AppError` (`api/src/error.rs`) moves from `{status, code:"STRING"}` to the envelope, with the old string as `data.reason`. Board routes fold into one pass-through relay: one allowlist table, one handler and one door function, mounted only on the table's paths, so an unknown path still answers 404 (168pay#256). Relay tests load bank-bot's fixtures. |
 | rust-project-backend (note) | Hand-built bodies (`books/routes.rs:577-582,662-667,829-834,1035,1087,1091`, `internal/callbacks.rs` `{"status":"ok"}`) move to `ok!`/`err!`. `MyError` answers `{code, message, data:{reason}}` instead of `{code, error}` / `{error}`. `bank_bot.rs` reads refusals with one function, `code` + `data.reason`. Init-setting reads `data.job`. Tests load 168pay and bank-bot fixtures. |
 | aes_channel users (RPB, bank-bot, 168pay) | §2.1, additive. |
 | ScreenLink + bank-bot (board wire) | §2.2: two-way MQTT fixtures. ScreenLink publishes reply fixtures from `mqtt_proto`, and bank-bot publishes request fixtures; each side's tests load the other's. |
 | note-front-end-main (note-fe) | After RPB's fixtures land: one reader in the Dio client (`responder.dart`, `dio_error_util.dart`) branches on `code` + `data.reason` for every route. Remove the per-store fallbacks (`error ?? code`, bare-or-`data`), and show RPB's `data.reason` on a 500 instead of `authentication_error`. |
-| jh-api, pos108-*, other lanes | Their client-facing APIs per decision O1. Service-to-service calls they make (e.g. to Payment-Platform, identity) follow §2–§5 now. |
+| jh-api, pos108-*, other lanes | Client-facing APIs move to the envelope one lane at a time, server and apps in the same release (§8 O1 = B; jh-api's D4 is reversed, and the jh-api lane updates `docs/design/architecture-standard.md` §6). Service-to-service calls they make (e.g. to Payment-Platform, identity) follow §2–§5 now. |
 
 ---
 
-## 8. Open decisions for the owner
+## 8. Owner decisions
 
-- **O1: client-facing APIs.** jh-api's error shape `{error, message}` was kept on purpose (owner decision D4, 2026-11-23, jh-api `docs/design/architecture-standard.md` §6) because both Flutter apps read it.
-  - **Option A:** this standard covers service-to-service wires now. Client-facing APIs keep their pinned shapes until each lane moves its apps.
-  - **Option B:** every API, apps included, moves to §2 now, and D4 is reversed.
-  - Proposed: **B** for repos whose apps are still in development, done one lane at a time with the app change in the same release. The reason is the owner's "one standard".
-- **O2: the rule line in the fleet rules** (`~/.claude/CLAUDE.md`), so every reviewer applies §6 without opening this file. Proposed text: *"🔌 Every wire between services follows `108-ting-ecosystem-docs/API_CONNECTION_STANDARD.md`: one envelope, one channel per hop, writer-owned shapes, fixture tests. A breach is a review FAIL and a queue strike."*
+Owner, 2026-11-25 ~07:35 ICT, in session claude/b5503320, verbatim: *"O1 เอา B ทีละเลน O2 ใส่กฎกลางเลย"*.
+
+- **O1 = B, one lane at a time.** Every API moves to the §2 envelope, client-facing APIs included. jh-api's decision D4 (2026-11-23, keep `{error, message}` because both Flutter apps read it) is reversed.
+  - **How:** one lane at a time. Each lane changes its server and its apps in the same release, following the §7 order: add the new field first, move readers, then drop the old one.
+  - **Why B:** the owner's order is one standard for every connection (*"ให้ ใช้ มาตรฐานเดียวกันการเชื่อ มต่อและ สื่อสาร"*). No app is in production yet, so this is the cheapest time to change a shape. An exemption for client-facing APIs would leave a second envelope that every new reader has to learn.
+  - **Why one lane at a time:** each lane owns its server and its apps. Moving them together inside one lane keeps every reader and writer in step. Moving every lane at once would make the lanes wait on each other's releases.
+  - **Scope:** this covers the envelope (§2 rules 0–5). Field casing stays as §2 rule 6 says: snake_case for service-to-service, and a client-facing API keeps the casing its apps already read.
+- **O2 = yes.** The fleet rules (`claude-global-rules`, `CLAUDE.md` § 🔌) carry a rule line pointing here, so every reviewer applies §6 without opening this file.
 
 ---
 
