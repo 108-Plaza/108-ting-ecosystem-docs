@@ -130,7 +130,7 @@ Owner decision S1 = A (§8). The envelope stays the one wire shape. RFC 9457 is 
 Rules:
 
 1. **The body stays `application/json` with the §2 envelope.** No service answers `application/problem+json`: that would make a second shape for errors only, against O1.
-2. **Every writer publishes its reason registry** at `contracts/reasons.md`, one row per token: `reason` · the `code`(s) it comes with · what it means · where it is raised (`file:line`). A token missing from the registry fails review, like a missing fixture (§5).
+2. **Every writer publishes its reason registry** in `contracts/`, one entry per token: `reason` · the `code`(s) it comes with · what it means · where it is raised (`file:line` or the code symbol). Prefer a file **generated from the code** (e.g. jh-api `contracts/error-reasons.json`, 619 reasons, jh-api PR 2272), so it cannot drift; a hand-kept `contracts/reasons.md` table is the fallback. A token missing from the registry fails review, like a missing fixture (§5).
 3. **A token keeps its meaning forever.** A changed cause gets a new token; the old token is retired in the registry, never reused (§2 rule 2).
 4. Log lines carry the same token as `error.type` (decision S3), so the screen, the reader's branch and the log name one cause with one token.
 
@@ -241,7 +241,7 @@ Owner, 2026-11-25 ~07:35 ICT, in session claude/b5503320, verbatim: *"O1 เอ�
 ## 9. Checklist for a PR that touches a wire
 
 - [ ] Answers are `{code, message, data}`, `code` equals the HTTP status, failures carry `data.reason`.
-- [ ] Every `data.reason` this PR adds is in the writer's `contracts/reasons.md` (§2.3).
+- [ ] Every `data.reason` this PR adds is in the writer's reason registry under `contracts/` (§2.3).
 - [ ] Every shape this PR reads from another service is cited by that writer's `file:line` or fixture.
 - [ ] A relay passes answers through unchanged.
 - [ ] New or changed routes have writer fixtures and a writer test.
